@@ -1,2 +1,1 @@
-# TechniServe
-A platform for IT firms to provide maintenance services to other offices under a Service Level Agreement (SLA).
+<!-- Instructions on environment setup and stack details -->

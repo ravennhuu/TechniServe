@@ -1,0 +1,2 @@
+<?php
+// Database credentials, gitignored
