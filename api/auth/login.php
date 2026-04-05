@@ -1,0 +1,7 @@
+<?php
+// Pair B
+// login.php — Authenticates credentials and starts session
+session_start();
+require '../../includes/auth.php';
+require '../../includes/db.php';
+header('Content-Type: application/json');

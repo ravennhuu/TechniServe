@@ -1,0 +1,1 @@
+// landing.js — smooth scroll and lead form validation

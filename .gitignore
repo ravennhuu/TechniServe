@@ -1,0 +1,6 @@
+db_config.php
+public/assets/images/
+design/figma/
+*.fig
+.DS_Store
+Thumbs.db

@@ -1,0 +1,1 @@
+// main.js — core portal interactivity and UI event listeners

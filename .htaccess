@@ -1,0 +1,5 @@
+# .htaccess — blocks direct browser access to sensitive folders
+Options -Indexes
+RewriteEngine On
+RewriteRule ^includes/ - [F,L]
+RewriteRule ^sql/ - [F,L]

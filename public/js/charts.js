@@ -1,0 +1,1 @@
+// charts.js — Chart.js integration and config
