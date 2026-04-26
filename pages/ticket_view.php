@@ -17,6 +17,7 @@ $ticket = [
     'created'     => '2026-04-25 09:22',
     'updated'     => '2026-04-25 10:45',
     'sla_deadline'=> '2026-04-25 11:22',
+    'deducted_hours' => 2.5,
 ];
 
 $activity = [
@@ -25,7 +26,7 @@ $activity = [
     ['actor'=>'Maria Santos',  'action'=>'Ticket submitted: Network switch failure in Server Room B.', 'time'=>'2026-04-25 09:22','dot'=>'silver'],
 ];
 
-$priority_map = ['critical'=>'badge-critical','high'=>'badge-high','medium'=>'badge-medium','low'=>'badge-low'];
+$priority_map = ['critical'=>'badge-critical','high'=>'badge-high','low'=>'badge-low'];
 $status_map   = ['open'=>'badge-open','in_progress'=>'badge-in-progress','resolved'=>'badge-resolved','closed'=>'badge-closed'];
 ?>
 
@@ -54,7 +55,7 @@ $status_map   = ['open'=>'badge-open','in_progress'=>'badge-in-progress','resolv
     <div style="display:flex;gap:.625rem;flex-wrap:wrap;">
         <a href="tickets.php" class="btn-ts-secondary">← Back to Tickets</a>
         <?php if (isset($_SESSION['role']) && in_array($_SESSION['role'],['admin','technician'])): ?>
-        <button class="btn-ts-primary" onclick="alert('Edit form coming in integration phase.')">Edit Ticket</button>
+        <a href="ticket_edit.php?id=<?php echo $ticket['id']; ?>" class="btn-ts-primary">Edit Ticket</a>
         <?php endif; ?>
     </div>
 </div>
@@ -108,11 +109,14 @@ $status_map   = ['open'=>'badge-open','in_progress'=>'badge-in-progress','resolv
                     'Assigned To'  => $ticket['assigned'],
                     'Created'      => $ticket['created'],
                     'Last Updated' => $ticket['updated'],
+                    'SLA Deduction' => isset($ticket['deducted_hours']) ? $ticket['deducted_hours'] . ' hours' : null,
                 ];
                 foreach ($meta as $label => $val): ?>
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:.625rem 0;border-bottom:1px solid var(--border-color);">
                     <span style="font-size:.8125rem;font-weight:600;color:var(--text-muted);min-width:110px;"><?php echo $label; ?></span>
-                    <span style="font-size:.875rem;color:var(--text-primary);text-align:right;"><?php echo htmlspecialchars($val); ?></span>
+                    <span style="font-size:.875rem;color:<?php echo $label === 'SLA Deduction' ? '#059669' : 'var(--text-primary)'; ?>;text-align:right; font-weight:<?php echo $label === 'SLA Deduction' ? '700' : '400'; ?>;">
+                        <?php echo htmlspecialchars($val); ?>
+                    </span>
                 </div>
                 <?php endforeach; ?>
             </div>

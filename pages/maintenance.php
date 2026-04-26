@@ -15,6 +15,23 @@ $logs = [
 ];
 
 $s_map = ['completed'=>'badge-resolved','scheduled'=>'badge-open','cancelled'=>'badge-closed'];
+
+// ── Role-based Filtering ──
+$is_client = (isset($_SESSION['role']) && $_SESSION['role'] === 'client');
+$my_client = 'Acme Corp'; // Dummy
+
+if ($is_client) {
+    $logs = array_filter($logs, function($l) use ($my_client) {
+        return $l['client'] === $my_client;
+    });
+    // Client-specific SLA pool dummy data
+    $pool_total = 100;
+    $pool_used = 25.5;
+} else {
+    $pool_total = 160;
+    $pool_used = 42.5;
+}
+$pool_remaining = $pool_total - $pool_used;
 ?>
 
 <div class="page-header">
@@ -22,10 +39,54 @@ $s_map = ['completed'=>'badge-resolved','scheduled'=>'badge-open','cancelled'=>'
         <h1 class="page-title">Maintenance Logs</h1>
         <p class="page-subtitle">Scheduled and completed preventive maintenance records.</p>
     </div>
-    <a href="maintenance_create.php" class="btn-ts-primary" id="newMaintenanceBtn">
-        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
-        Log Maintenance
-    </a>
+    <div style="display:flex;gap:.625rem;flex-wrap:wrap;">
+        <?php if (!$is_client): ?>
+        <a href="maintenance_create.php" class="btn-ts-primary" id="newMaintenanceBtn">
+            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+            Log Maintenance
+        </a>
+        <?php endif; ?>
+    </div>
+</div>
+
+<!-- SLA Pool Status (Automated Maintenance Logging Feature) -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-4">
+        <div class="kpi-card">
+            <div class="kpi-icon blue">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <div class="kpi-data">
+                <div class="kpi-value"><?php echo $pool_total; ?>h</div>
+                <div class="kpi-label"><?php echo $is_client ? 'Total Plan Hours' : 'Total SLA Pool (Monthly)'; ?></div>
+                <div class="kpi-trend" style="color:var(--steel-blue);"><?php echo $is_client ? 'Allocated for your account' : 'Shared across all clients'; ?></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-4">
+        <div class="kpi-card">
+            <div class="kpi-icon navy">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+            </div>
+            <div class="kpi-data">
+                <div class="kpi-value"><?php echo $pool_used; ?>h</div>
+                <div class="kpi-label">Utilized Hours</div>
+                <div class="kpi-trend red">↓ Deducted from pool</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-4">
+        <div class="kpi-card">
+            <div class="kpi-icon green">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <div class="kpi-data">
+                <div class="kpi-value"><?php echo $pool_remaining; ?>h</div>
+                <div class="kpi-label">Remaining Balance</div>
+                <div class="kpi-trend up">↑ Healthy status</div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Filter Bar -->
@@ -52,8 +113,8 @@ $s_map = ['completed'=>'badge-resolved','scheduled'=>'badge-open','cancelled'=>'
                     <th>Client</th>
                     <th>Maintenance Type</th>
                     <th>Technician</th>
+                    <th>SLA Hours</th>
                     <th>Status</th>
-                    <th>Notes</th>
                 </tr>
             </thead>
             <tbody>
@@ -65,12 +126,20 @@ $s_map = ['completed'=>'badge-resolved','scheduled'=>'badge-open','cancelled'=>'
                     <td><?php echo htmlspecialchars($log['type']); ?></td>
                     <td class="text-muted-ts"><?php echo htmlspecialchars($log['technician']); ?></td>
                     <td>
+                        <div style="display:flex; flex-direction:column;">
+                            <span style="font-weight:600; color:var(--navy-deepest);">
+                                <?php echo (rand(2, 8)) . '.0h'; ?>
+                            </span>
+                            <span style="font-size:0.65rem; color:#059669; font-weight:700; text-transform:uppercase; letter-spacing:0.02em;">
+                                <svg width="8" height="8" fill="currentColor" viewBox="0 0 20 20" style="margin-right:2px;"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                                Auto-Deducted
+                            </span>
+                        </div>
+                    </td>
+                    <td>
                         <span class="ts-badge <?php echo $s_map[$log['status']] ?? 'badge-silver'; ?>">
                             <?php echo ucfirst($log['status']); ?>
                         </span>
-                    </td>
-                    <td style="font-size:.8125rem;color:var(--text-muted);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                        <?php echo htmlspecialchars($log['notes']); ?>
                     </td>
                 </tr>
                 <?php endforeach; ?>

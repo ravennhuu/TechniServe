@@ -57,11 +57,11 @@ $technicians = ['J. Reyes','M. Santos','R. Cruz','A. dela Rosa'];
                                     <option value="">— Select —</option>
                                     <option value="critical">🔴 Critical</option>
                                     <option value="high">🟠 High</option>
-                                    <option value="medium">🔵 Medium</option>
                                     <option value="low">🟢 Low</option>
                                 </select>
                             </div>
                         </div>
+                        <?php if (isset($_SESSION['role']) && in_array($_SESSION['role'], ['admin', 'technician'])): ?>
                         <div class="col-sm-6">
                             <div class="ts-form-group">
                                 <label class="ts-form-label" for="ticketClient">
@@ -75,9 +75,11 @@ $technicians = ['J. Reyes','M. Santos','R. Cruz','A. dela Rosa'];
                                 </select>
                             </div>
                         </div>
+                        <?php endif; ?>
                     </div>
 
                     <div class="row g-3">
+                        <?php if (isset($_SESSION['role']) && in_array($_SESSION['role'], ['admin', 'technician'])): ?>
                         <div class="col-sm-6">
                             <div class="ts-form-group">
                                 <label class="ts-form-label" for="ticketAssigned">Assign To</label>
@@ -89,6 +91,7 @@ $technicians = ['J. Reyes','M. Santos','R. Cruz','A. dela Rosa'];
                                 </select>
                             </div>
                         </div>
+                        <?php endif; ?>
                         <div class="col-sm-6">
                             <div class="ts-form-group">
                                 <label class="ts-form-label" for="ticketCategory">Category</label>
@@ -134,10 +137,7 @@ $technicians = ['J. Reyes','M. Santos','R. Cruz','A. dela Rosa'];
                         <span class="ts-badge badge-high" style="margin-bottom:.25rem;">High</span>
                         <div style="color:var(--text-muted);font-size:.8125rem;margin-top:.25rem;">Significant impact on a team or department. Response SLA: 4 hours.</div>
                     </li>
-                    <li style="padding:.5rem 0;border-bottom:1px solid var(--border-color);">
-                        <span class="ts-badge badge-medium" style="margin-bottom:.25rem;">Medium</span>
-                        <div style="color:var(--text-muted);font-size:.8125rem;margin-top:.25rem;">Reduced functionality but workaround exists. Response SLA: 8 hours.</div>
-                    </li>
+
                     <li style="padding:.5rem 0;">
                         <span class="ts-badge badge-low" style="margin-bottom:.25rem;">Low</span>
                         <div style="color:var(--text-muted);font-size:.8125rem;margin-top:.25rem;">Minor issue or request. Response SLA: Next business day.</div>

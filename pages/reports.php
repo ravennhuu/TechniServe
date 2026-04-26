@@ -17,6 +17,12 @@ require '../includes/header.php';
             <option value="180">Last 6 Months</option>
             <option value="365">Last 12 Months</option>
         </select>
+        <?php if (isset($_SESSION['role']) && $_SESSION['role'] !== 'client'): ?>
+        <button class="btn-ts-primary" onclick="alert('Auto-generating formal summary of resolved tickets and uptime...')">
+            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 17v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2m3.243-9.743a4 4 0 115.657 0L12 10l-.914-.914a4 4 0 115.657 0M12 14v7m-3-3l3 3 3-3"/></svg>
+            Generate Monthly Report
+        </button>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -103,6 +109,48 @@ require '../includes/header.php';
         </div>
     </div>
 
+<!-- Monthly Reports Archive -->
+<div class="ts-card mt-4">
+    <div class="ts-card-header">
+        <h5 class="ts-card-title">Monthly Service Report History</h5>
+        <span class="ts-badge badge-silver">Auto-Generated Summaries</span>
+    </div>
+    <div class="ts-table-wrap">
+        <table class="ts-table">
+            <thead>
+                <tr>
+                    <th>Report Period</th>
+                    <th>Resolved Tickets</th>
+                    <th>Avg. Uptime</th>
+                    <th>Compliance</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>March 2026</td>
+                    <td>42 Tickets</td>
+                    <td style="color:#059669; font-weight:600;">99.98%</td>
+                    <td><span class="ts-badge badge-resolved">Compliant</span></td>
+                    <td><button class="btn-ts-secondary btn-ts-sm">Download PDF</button></td>
+                </tr>
+                <tr>
+                    <td>February 2026</td>
+                    <td>38 Tickets</td>
+                    <td style="color:#059669; font-weight:600;">99.95%</td>
+                    <td><span class="ts-badge badge-resolved">Compliant</span></td>
+                    <td><button class="btn-ts-secondary btn-ts-sm">Download PDF</button></td>
+                </tr>
+                <tr>
+                    <td>January 2026</td>
+                    <td>51 Tickets</td>
+                    <td style="color:#DC2626; font-weight:600;">98.40%</td>
+                    <td><span class="ts-badge badge-critical">Non-Compliant</span></td>
+                    <td><button class="btn-ts-secondary btn-ts-sm">Download PDF</button></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <script src="../public/js/chart.min.js"></script>

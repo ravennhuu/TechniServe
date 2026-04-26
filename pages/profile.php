@@ -8,7 +8,11 @@ require '../includes/header.php';
 <div class="page-header">
     <div>
         <h1 class="page-title">My Profile</h1>
+        <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'client'): ?>
+        <p class="page-subtitle">Your account information.</p>
+        <?php else: ?>
         <p class="page-subtitle">View and update your account information.</p>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -44,66 +48,84 @@ require '../includes/header.php';
         </div>
     </div>
 
-    <!-- Edit Form -->
+    <!-- Edit Form / Read-only for Client -->
     <div class="col-lg-8">
         <div class="ts-card">
-            <div class="ts-card-header"><h5 class="ts-card-title">Edit Profile</h5></div>
-            <div class="ts-card-body">
-                <form action="api/users/update_profile.php" method="POST" id="profileForm">
+            <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'client'): ?>
+                <div class="ts-card-header"><h5 class="ts-card-title">Account Access</h5></div>
+                <div class="ts-card-body">
+                    <div class="ts-alert ts-alert-info">
+                        Profile editing is restricted for client accounts. Please contact the administrator for any information updates.
+                    </div>
+                    <div style="padding:1rem 0;">
+                        <p style="font-weight:600; color:var(--text-muted); font-size:.8125rem; text-transform:uppercase;">Account Permissions</p>
+                        <ul style="list-style:none; padding:0; font-size:.875rem; color:var(--text-primary);">
+                            <li style="padding:.5rem 0; border-bottom:1px solid var(--border-color);">✓ View dashboard and active tickets</li>
+                            <li style="padding:.5rem 0; border-bottom:1px solid var(--border-color);">✓ Access ticket history</li>
+                            <li style="padding:.5rem 0; border-bottom:1px solid var(--border-color);">✓ Submit new support requests</li>
+                            <li style="padding:.5rem 0;">✓ Download monthly reports</li>
+                        </ul>
+                    </div>
+                </div>
+            <?php else: ?>
+                <div class="ts-card-header"><h5 class="ts-card-title">Edit Profile</h5></div>
+                <div class="ts-card-body">
+                    <form action="api/users/update_profile.php" method="POST" id="profileForm">
 
-                    <div class="row g-3">
-                        <div class="col-sm-6">
-                            <div class="ts-form-group">
-                                <label class="ts-form-label" for="profileName">Full Name <span class="required-star">*</span></label>
-                                <input type="text" id="profileName" name="name" class="ts-form-control"
-                                    value="<?php echo htmlspecialchars($_SESSION['name'] ?? ''); ?>" required>
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <div class="ts-form-group">
+                                    <label class="ts-form-label" for="profileName">Full Name <span class="required-star">*</span></label>
+                                    <input type="text" id="profileName" name="name" class="ts-form-control"
+                                        value="<?php echo htmlspecialchars($_SESSION['name'] ?? ''); ?>" required>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="ts-form-group">
+                                    <label class="ts-form-label" for="profileEmail">Email Address <span class="required-star">*</span></label>
+                                    <input type="email" id="profileEmail" name="email" class="ts-form-control"
+                                        value="<?php echo htmlspecialchars($_SESSION['email'] ?? ''); ?>" required>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-sm-6">
-                            <div class="ts-form-group">
-                                <label class="ts-form-label" for="profileEmail">Email Address <span class="required-star">*</span></label>
-                                <input type="email" id="profileEmail" name="email" class="ts-form-control"
-                                    value="<?php echo htmlspecialchars($_SESSION['email'] ?? ''); ?>" required>
+
+                        <div class="ts-form-group">
+                            <label class="ts-form-label" for="profilePhone">Phone Number</label>
+                            <input type="tel" id="profilePhone" name="phone" class="ts-form-control" placeholder="+63 917 000 0000">
+                        </div>
+
+                        <div class="divider"></div>
+                        <p style="font-size:.8125rem;font-weight:700;color:var(--text-primary);margin-bottom:1rem;">Change Password</p>
+
+                        <div class="ts-alert ts-alert-info" style="margin-bottom:1rem;">
+                            Leave blank to keep your current password.
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <div class="ts-form-group">
+                                    <label class="ts-form-label" for="currentPass">Current Password</label>
+                                    <input type="password" id="currentPass" name="current_password" class="ts-form-control" placeholder="Enter current password">
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="ts-form-group">
+                                    <label class="ts-form-label" for="newPass">New Password</label>
+                                    <input type="password" id="newPass" name="new_password" class="ts-form-control" placeholder="Min. 8 characters">
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="ts-form-group">
-                        <label class="ts-form-label" for="profilePhone">Phone Number</label>
-                        <input type="tel" id="profilePhone" name="phone" class="ts-form-control" placeholder="+63 917 000 0000">
-                    </div>
+                        <div class="divider"></div>
 
-                    <div class="divider"></div>
-                    <p style="font-size:.8125rem;font-weight:700;color:var(--text-primary);margin-bottom:1rem;">Change Password</p>
-
-                    <div class="ts-alert ts-alert-info" style="margin-bottom:1rem;">
-                        Leave blank to keep your current password.
-                    </div>
-
-                    <div class="row g-3">
-                        <div class="col-sm-6">
-                            <div class="ts-form-group">
-                                <label class="ts-form-label" for="currentPass">Current Password</label>
-                                <input type="password" id="currentPass" name="current_password" class="ts-form-control" placeholder="Enter current password">
-                            </div>
+                        <div style="display:flex;gap:.75rem;justify-content:flex-end;">
+                            <button type="reset" class="btn-ts-secondary">Reset</button>
+                            <button type="submit" class="btn-ts-primary">Save Changes</button>
                         </div>
-                        <div class="col-sm-6">
-                            <div class="ts-form-group">
-                                <label class="ts-form-label" for="newPass">New Password</label>
-                                <input type="password" id="newPass" name="new_password" class="ts-form-control" placeholder="Min. 8 characters">
-                            </div>
-                        </div>
-                    </div>
 
-                    <div class="divider"></div>
-
-                    <div style="display:flex;gap:.75rem;justify-content:flex-end;">
-                        <button type="reset" class="btn-ts-secondary">Reset</button>
-                        <button type="submit" class="btn-ts-primary">Save Changes</button>
-                    </div>
-
-                </form>
-            </div>
+                    </form>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 

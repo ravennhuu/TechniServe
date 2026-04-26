@@ -15,7 +15,7 @@ $kpi = [
 $recent_tickets = [
     ['id'=>1021,'subject'=>'Network switch failure in Server Room B','priority'=>'critical','status'=>'open',       'client'=>'Acme Corp',    'created'=>'2026-04-25'],
     ['id'=>1020,'subject'=>'Outlook not syncing for 5 users',        'priority'=>'high',    'status'=>'in_progress','client'=>'Globe BPO',    'created'=>'2026-04-25'],
-    ['id'=>1019,'subject'=>'Printer offline — Finance floor',         'priority'=>'medium',  'status'=>'open',       'client'=>'BPI Office',   'created'=>'2026-04-24'],
+    ['id'=>1019,'subject'=>'Printer offline — Finance floor',         'priority'=>'low',     'status'=>'open',       'client'=>'BPI Office',   'created'=>'2026-04-24'],
     ['id'=>1018,'subject'=>'WiFi intermittent — Conference Room 3',   'priority'=>'low',     'status'=>'resolved',   'client'=>'SM Supermall','created'=>'2026-04-24'],
     ['id'=>1017,'subject'=>'Laptop battery replacement request',      'priority'=>'low',     'status'=>'resolved',   'client'=>'Robinsons',   'created'=>'2026-04-23'],
 ];
@@ -25,6 +25,24 @@ $upcoming_maintenance = [
     ['date'=>'2026-04-30','client'=>'Globe BPO',    'type'=>'Network Audit',               'technician'=>'M. Santos'],
     ['date'=>'2026-05-02','client'=>'BPI Office',   'type'=>'UPS Battery Replacement',    'technician'=>'J. Reyes'],
 ];
+
+// Filter data if client
+if (isset($_SESSION['role']) && $_SESSION['role'] === 'client') {
+    $my_client_name = 'Acme Corp'; // Dummy: in real app, get from session/DB
+    $recent_tickets = array_filter($recent_tickets, function($t) use ($my_client_name) {
+        return $t['client'] === $my_client_name;
+    });
+    $upcoming_maintenance = array_filter($upcoming_maintenance, function($m) use ($my_client_name) {
+        return $m['client'] === $my_client_name;
+    });
+    $kpi = [
+        'open_tickets'    => 2,
+        'in_progress'     => 1,
+        'resolved_today'  => 0,
+        'sla_pool'        => '74.5',
+        'sla_total'       => '100',
+    ];
+}
 ?>
 
 <div class="page-header">
@@ -84,9 +102,18 @@ $upcoming_maintenance = [
                 <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
             </div>
             <div class="kpi-data">
+                <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'client'): ?>
+                <div class="kpi-value">
+                    <?php echo $kpi['sla_pool']; ?>
+                    <span style="font-size: 0.9rem; font-weight: 400; opacity: 0.7;">/ <?php echo $kpi['sla_total']; ?>h</span>
+                </div>
+                <div class="kpi-label">Remaining SLA Pool</div>
+                <div class="kpi-trend up">↑ Health: Good</div>
+                <?php else: ?>
                 <div class="kpi-value"><?php echo $kpi['sla_compliance']; ?></div>
                 <div class="kpi-label">SLA Compliance</div>
                 <div class="kpi-trend up">↑ Above 98% target</div>
+                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -123,7 +150,7 @@ $upcoming_maintenance = [
                             </td>
                             <td>
                                 <?php
-                                $pMap = ['critical'=>'badge-critical','high'=>'badge-high','medium'=>'badge-medium','low'=>'badge-low'];
+                                $pMap = ['critical'=>'badge-critical','high'=>'badge-high','low'=>'badge-low'];
                                 $cls  = $pMap[$t['priority']] ?? 'badge-silver';
                                 ?>
                                 <span class="ts-badge <?php echo $cls; ?>"><?php echo ucfirst($t['priority']); ?></span>
