@@ -1,20 +1,45 @@
 <?php
 // clients.php — Pair A
-// Client list table. Dummy data only.
+// Client list table.
 require '../includes/auth.php';
+require '../includes/db.php';
 require '../includes/header.php';
 
-$clients = [
-    ['id'=>1,'company'=>'Acme Corp',    'contact'=>'Maria Santos',   'email'=>'m.santos@acme.ph',   'phone'=>'+63 917 100 2000','plan'=>'Enterprise',  'status'=>'active',  'since'=>'2024-01-15'],
-    ['id'=>2,'company'=>'Globe BPO',    'contact'=>'Jose Dela Cruz', 'email'=>'j.delacruz@globe.ph','phone'=>'+63 918 200 3000','plan'=>'Professional','status'=>'active',  'since'=>'2024-03-01'],
-    ['id'=>3,'company'=>'BPI Office',   'contact'=>'Ana Reyes',      'email'=>'a.reyes@bpi.ph',     'phone'=>'+63 922 300 4000','plan'=>'Basic',       'status'=>'active',  'since'=>'2024-06-10'],
-    ['id'=>4,'company'=>'SM Supermall', 'contact'=>'Carlo Tan',      'email'=>'c.tan@sm.ph',        'phone'=>'+63 919 400 5000','plan'=>'Professional','status'=>'expiring','since'=>'2023-07-01'],
-    ['id'=>5,'company'=>'Robinsons',    'contact'=>'Luz Cruz',       'email'=>'l.cruz@robinsons.ph','phone'=>'+63 917 500 6000','plan'=>'Basic',       'status'=>'inactive','since'=>'2023-04-01'],
-    ['id'=>6,'company'=>'Ayala Land',   'contact'=>'Ramon Torres',   'email'=>'r.torres@ayala.ph',  'phone'=>'+63 917 600 7000','plan'=>'Enterprise',  'status'=>'active',  'since'=>'2025-01-20'],
-];
+// Guard: Only Admin can access clients list
+if ($_SESSION['role'] !== 'admin') {
+    header('Location: dashboard.php');
+    exit();
+}
+
+try {
+    $stmt = $pdo->prepare("
+        SELECT c.*, s.monthly_hours_pool, s.end_date,
+               CASE 
+                 WHEN s.id IS NULL OR s.is_active = 0 THEN 'inactive'
+                 WHEN s.end_date < DATE_ADD(CURDATE(), INTERVAL 30 DAY) THEN 'expiring'
+                 ELSE 'active'
+               END as status
+        FROM clients c
+        LEFT JOIN sla_contracts s ON c.id = s.client_id AND s.is_active = 1
+        ORDER BY c.company_name ASC
+    ");
+    $stmt->execute();
+    $clients = $stmt->fetchAll();
+} catch (PDOException $e) {
+    $clients = [];
+    $error = "Failed to fetch clients: " . $e->getMessage();
+}
 
 $s_map = ['active'=>'badge-resolved','expiring'=>'badge-high','inactive'=>'badge-closed'];
-$p_map = ['Enterprise'=>'badge-navy','Professional'=>'badge-in-progress','Basic'=>'badge-silver'];
+
+function getPlanName($hours) {
+    if (!$hours) return 'None';
+    if ($hours <= 20) return 'Basic';
+    if ($hours <= 50) return 'Professional';
+    return 'Enterprise';
+}
+
+$p_map = ['Enterprise'=>'badge-navy','Professional'=>'badge-in-progress','Basic'=>'badge-silver','None'=>'badge-closed'];
 ?>
 
 <div class="page-header">
@@ -62,12 +87,13 @@ $p_map = ['Enterprise'=>'badge-navy','Professional'=>'badge-in-progress','Basic'
                 <?php foreach ($clients as $c): ?>
                 <tr>
                     <td class="col-id"><?php echo $c['id']; ?></td>
-                    <td style="font-weight:600;"><?php echo htmlspecialchars($c['company']); ?></td>
-                    <td class="text-muted-ts"><?php echo htmlspecialchars($c['contact']); ?></td>
-                    <td style="font-size:.8125rem;"><a href="mailto:<?php echo $c['email']; ?>" class="text-navy"><?php echo htmlspecialchars($c['email']); ?></a></td>
-                    <td style="font-size:.8125rem;color:var(--text-muted);"><?php echo htmlspecialchars($c['phone']); ?></td>
-                    <td><span class="ts-badge <?php echo $p_map[$c['plan']] ?? 'badge-silver'; ?>"><?php echo $c['plan']; ?></span></td>
-                    <td style="font-size:.8125rem;color:var(--text-muted);"><?php echo $c['since']; ?></td>
+                    <td style="font-weight:600;"><?php echo htmlspecialchars($c['company_name']); ?></td>
+                    <td class="text-muted-ts"><?php echo htmlspecialchars($c['contact_person']); ?></td>
+                    <td style="font-size:.8125rem;"><a href="mailto:<?php echo $c['contact_email']; ?>" class="text-navy"><?php echo htmlspecialchars($c['contact_email']); ?></a></td>
+                    <td style="font-size:.8125rem;color:var(--text-muted);"><?php echo htmlspecialchars($c['contact_phone']); ?></td>
+                    <?php $plan = getPlanName($c['monthly_hours_pool'] ?? 0); ?>
+                    <td><span class="ts-badge <?php echo $p_map[$plan] ?? 'badge-silver'; ?>"><?php echo $plan; ?></span></td>
+                    <td style="font-size:.8125rem;color:var(--text-muted);"><?php echo date('Y-m-d', strtotime($c['created_at'])); ?></td>
                     <td><span class="ts-badge <?php echo $s_map[$c['status']] ?? 'badge-silver'; ?>"><?php echo ucfirst($c['status']); ?></span></td>
                     <td>
                         <a href="client_form.php?id=<?php echo $c['id']; ?>" class="btn-ts-secondary btn-ts-sm">Edit</a>

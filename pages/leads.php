@@ -1,19 +1,26 @@
 <?php
 // leads.php — Pair A
-// Incoming access requests (leads). Approve / Reject UI. Dummy data only.
+// Incoming access requests (leads).
 require '../includes/auth.php';
+require '../includes/db.php';
 require '../includes/header.php';
 
-// ── Dummy Data ──
-$leads = [
-    ['id'=>1,'company'=>'Eastern Telecoms','contact'=>'Ramon Villanueva','email'=>'ramon@etel.ph',    'phone'=>'+63 917 111 2233','plan'=>'Professional','submitted'=>'2026-04-25','status'=>'pending'],
-    ['id'=>2,'company'=>'Jollibee Foods',  'contact'=>'Lisa Tan',        'email'=>'ltan@jfc.ph',     'phone'=>'+63 918 222 3344','plan'=>'Enterprise',  'submitted'=>'2026-04-24','status'=>'pending'],
-    ['id'=>3,'company'=>'PhilHealth',      'contact'=>'Carlos Reyes',    'email'=>'c.reyes@philhealth.ph','phone'=>'+63 922 444 5566','plan'=>'Basic','submitted'=>'2026-04-23','status'=>'approved'],
-    ['id'=>4,'company'=>'PAGCOR',          'contact'=>'Ana Cruz',        'email'=>'a.cruz@pagcor.ph','phone'=>'+63 917 555 6677','plan'=>'Enterprise',  'submitted'=>'2026-04-22','status'=>'rejected'],
-    ['id'=>5,'company'=>'Unionbank',       'contact'=>'Paolo Mendoza',   'email'=>'p.mendoza@ub.ph', 'phone'=>'+63 919 666 7788','plan'=>'Professional','submitted'=>'2026-04-21','status'=>'pending'],
-];
+// Guard: Only Admin can access leads
+if ($_SESSION['role'] !== 'admin') {
+    header('Location: dashboard.php');
+    exit();
+}
 
-$s_map = ['pending'=>'badge-open','approved'=>'badge-resolved','rejected'=>'badge-closed'];
+try {
+    $stmt = $pdo->prepare("SELECT * FROM leads ORDER BY created_at DESC");
+    $stmt->execute();
+    $leads = $stmt->fetchAll();
+} catch (PDOException $e) {
+    $leads = [];
+    $error = "Failed to fetch leads: " . $e->getMessage();
+}
+
+$s_map = ['pending'=>'badge-open', 'approved'=>'badge-resolved', 'rejected'=>'badge-closed'];
 ?>
 
 <div class="page-header">
@@ -26,9 +33,14 @@ $s_map = ['pending'=>'badge-open','approved'=>'badge-resolved','rejected'=>'badg
 <!-- Summary Badges -->
 <div style="display:flex;gap:.75rem;margin-bottom:1.25rem;flex-wrap:wrap;">
     <?php
-    $pending  = count(array_filter($leads, fn($l)=>$l['status']==='pending'));
-    $approved = count(array_filter($leads, fn($l)=>$l['status']==='approved'));
-    $rejected = count(array_filter($leads, fn($l)=>$l['status']==='rejected'));
+    $pending  = 0;
+    $approved = 0;
+    $rejected = 0;
+    foreach ($leads as $l) {
+        if ($l['status'] === 'pending') $pending++;
+        elseif ($l['status'] === 'approved') $approved++;
+        elseif ($l['status'] === 'rejected') $rejected++;
+    }
     ?>
     <div class="kpi-card" style="padding:.75rem 1.25rem;flex:0 0 auto;">
         <div class="kpi-data">
@@ -70,12 +82,12 @@ $s_map = ['pending'=>'badge-open','approved'=>'badge-resolved','rejected'=>'badg
                 <?php foreach ($leads as $lead): ?>
                 <tr>
                     <td class="col-id"><?php echo $lead['id']; ?></td>
-                    <td style="font-weight:600;"><?php echo htmlspecialchars($lead['company']); ?></td>
-                    <td class="text-muted-ts"><?php echo htmlspecialchars($lead['contact']); ?></td>
+                    <td style="font-weight:600;"><?php echo htmlspecialchars($lead['company_name']); ?></td>
+                    <td class="text-muted-ts"><?php echo htmlspecialchars($lead['contact_person']); ?></td>
                     <td style="font-size:.8125rem;"><a href="mailto:<?php echo $lead['email']; ?>" class="text-navy"><?php echo htmlspecialchars($lead['email']); ?></a></td>
                     <td style="font-size:.8125rem;color:var(--text-muted);"><?php echo htmlspecialchars($lead['phone']); ?></td>
-                    <td><span class="ts-badge badge-navy"><?php echo $lead['plan']; ?></span></td>
-                    <td style="font-size:.8125rem;color:var(--text-muted);white-space:nowrap;"><?php echo $lead['submitted']; ?></td>
+                    <td><span class="ts-badge badge-navy"><?php echo htmlspecialchars($lead['preferred_plan'] ?? 'Not Selected'); ?></span></td>
+                    <td style="font-size:.8125rem;color:var(--text-muted);white-space:nowrap;"><?php echo date('Y-m-d', strtotime($lead['created_at'])); ?></td>
                     <td>
                         <span class="ts-badge <?php echo $s_map[$lead['status']]; ?>">
                             <?php echo ucfirst($lead['status']); ?>
@@ -84,11 +96,19 @@ $s_map = ['pending'=>'badge-open','approved'=>'badge-resolved','rejected'=>'badg
                     <td>
                         <?php if ($lead['status'] === 'pending'): ?>
                         <div style="display:flex;gap:.375rem;">
-                            <button class="btn-ts-success btn-ts-sm" onclick="alert('Approve lead #<?php echo $lead['id']; ?> — backend integration pending.')">Approve</button>
-                            <button class="btn-ts-danger btn-ts-sm" onclick="alert('Reject lead #<?php echo $lead['id']; ?> — backend integration pending.')">Reject</button>
+                            <form action="../api/leads/update.php" method="POST" style="display:inline;">
+                                <input type="hidden" name="id" value="<?php echo $lead['id']; ?>">
+                                <input type="hidden" name="status" value="approved">
+                                <button type="submit" class="btn-ts-success btn-ts-sm">Approve</button>
+                            </form>
+                            <form action="../api/leads/update.php" method="POST" style="display:inline;">
+                                <input type="hidden" name="id" value="<?php echo $lead['id']; ?>">
+                                <input type="hidden" name="status" value="rejected">
+                                <button type="submit" class="btn-ts-danger btn-ts-sm">Reject</button>
+                            </form>
                         </div>
                         <?php else: ?>
-                        <span style="font-size:.8125rem;color:var(--text-muted);">—</span>
+                        <span style="font-size:.8125rem;color:var(--text-muted);">Actioned</span>
                         <?php endif; ?>
                     </td>
                 </tr>

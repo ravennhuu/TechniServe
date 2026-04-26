@@ -1,7 +1,8 @@
 <?php
-// ticket_edit.php
-// Edit support ticket form. Dummy data only.
+// ticket_edit.php — Pair A
+// Edit support ticket form.
 require '../includes/auth.php';
+require '../includes/db.php';
 require '../includes/header.php';
 
 // Prevent clients from accessing the edit page
@@ -10,17 +11,29 @@ if (isset($_SESSION['role']) && $_SESSION['role'] === 'client') {
     exit;
 }
 
-// Dummy ticket data based on ID (normally fetched from DB)
-$ticket_id = $_GET['id'] ?? 1021;
+$ticket_id = $_GET['id'] ?? null;
+if (!$ticket_id) {
+    header('Location: tickets.php');
+    exit();
+}
 
-$ticket = [
-    'id'          => $ticket_id,
-    'subject'     => 'Network switch failure in Server Room B',
-    'status'      => 'in_progress',
-    'priority'    => 'critical',
-    'client'      => 'Acme Corp',
-    'assigned'    => 'J. Reyes'
-];
+try {
+    $stmt = $pdo->prepare("
+        SELECT t.*, c.company_name as client
+        FROM tickets t
+        JOIN clients c ON t.client_id = c.id
+        WHERE t.id = ?
+    ");
+    $stmt->execute([$ticket_id]);
+    $ticket = $stmt->fetch();
+
+    if (!$ticket) {
+        header('Location: tickets.php');
+        exit();
+    }
+} catch (PDOException $e) {
+    die("Database error: " . $e->getMessage());
+}
 ?>
 
 <nav style="font-size:.8125rem;color:var(--text-muted);margin-bottom:1.25rem;">
@@ -44,7 +57,8 @@ $ticket = [
         <div class="ts-card">
             <div class="ts-card-header"><h5 class="ts-card-title">Update Ticket Status & Notify Client</h5></div>
             <div class="ts-card-body">
-                <form action="ticket_view.php?id=<?php echo $ticket['id']; ?>" method="POST" id="editTicketForm">
+                <form action="../api/tickets/update.php" method="POST" id="editTicketForm">
+                    <input type="hidden" name="id" value="<?php echo $ticket['id']; ?>">
                     
                     <div class="row g-3">
                         <div class="col-sm-6">
@@ -76,7 +90,7 @@ $ticket = [
                         <label class="ts-form-label" for="clientUpdate">
                             Update Client (Message)
                         </label>
-                        <textarea id="clientUpdate" name="client_update"
+                        <textarea id="clientUpdate" name="note"
                             class="ts-form-control" rows="6"
                             placeholder="Type an update to send to the client..." required></textarea>
                     </div>
@@ -105,10 +119,6 @@ $ticket = [
                     <li style="padding:.5rem 0;border-bottom:1px solid var(--border-color);">
                         <span style="color:var(--text-muted);font-weight:600;display:inline-block;width:90px;">Client:</span>
                         <span><?php echo htmlspecialchars($ticket['client']); ?></span>
-                    </li>
-                    <li style="padding:.5rem 0;border-bottom:1px solid var(--border-color);">
-                        <span style="color:var(--text-muted);font-weight:600;display:inline-block;width:90px;">Assigned To:</span>
-                        <span><?php echo htmlspecialchars($ticket['assigned']); ?></span>
                     </li>
                 </ul>
                 <div style="margin-top: 1rem;">

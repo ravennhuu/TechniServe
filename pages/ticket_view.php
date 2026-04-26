@@ -1,30 +1,60 @@
 <?php
 // ticket_view.php — Pair A
-// Single ticket detail view with activity trail. Dummy data only.
+// Single ticket detail view.
 require '../includes/auth.php';
+require '../includes/db.php';
+require '../includes/functions.php';
 require '../includes/header.php';
 
-// ── Dummy Data ──
-$ticket = [
-    'id'          => 1021,
-    'subject'     => 'Network switch failure in Server Room B',
-    'description' => 'The managed switch in Server Room B has stopped responding. Approximately 30 workstations on Floor 3 have lost network connectivity. Rebooting the switch did not resolve the issue. The issue began at approximately 09:15 AM today.',
-    'priority'    => 'critical',
-    'status'      => 'in_progress',
-    'client'      => 'Acme Corp',
-    'contact'     => 'Maria Santos',
-    'assigned'    => 'J. Reyes',
-    'created'     => '2026-04-25 09:22',
-    'updated'     => '2026-04-25 10:45',
-    'sla_deadline'=> '2026-04-25 11:22',
-    'deducted_hours' => 2.5,
-];
+$ticket_id = $_GET['id'] ?? null;
+if (!$ticket_id) {
+    header('Location: tickets.php');
+    exit();
+}
 
-$activity = [
-    ['actor'=>'J. Reyes',      'action'=>'Status changed to In Progress. On-site visit scheduled.',   'time'=>'2026-04-25 10:45','dot'=>'blue'],
-    ['actor'=>'J. Reyes',      'action'=>'Ticket assigned by Admin.',                                  'time'=>'2026-04-25 09:35','dot'=>'navy'],
-    ['actor'=>'Maria Santos',  'action'=>'Ticket submitted: Network switch failure in Server Room B.', 'time'=>'2026-04-25 09:22','dot'=>'silver'],
-];
+try {
+    // Fetch Ticket with Client and SLA info
+    $stmt = $pdo->prepare("
+        SELECT t.*, c.company_name as client, c.contact_person as contact, u.name as creator_name,
+               sc.response_time_hrs,
+               (SELECT SUM(hours_spent) FROM maintenance_logs WHERE ticket_id = t.id AND status = 'completed') as deducted_hours
+        FROM tickets t
+        JOIN clients c ON t.client_id = c.id
+        JOIN users u ON t.created_by = u.id
+        LEFT JOIN sla_contracts sc ON t.client_id = sc.client_id AND sc.is_active = 1
+        WHERE t.id = ?
+    ");
+    $stmt->execute([$ticket_id]);
+    $ticket = $stmt->fetch();
+
+    if (!$ticket) {
+        header('Location: tickets.php');
+        exit();
+    }
+
+    // Role check: Client can only see their own tickets
+    if ($_SESSION['role'] === 'client' && $ticket['client_id'] != $_SESSION['client_id']) {
+        header('Location: tickets.php');
+        exit();
+    }
+
+    // Calculate SLA Deadline
+    $deadline = date('Y-m-d H:i:s', strtotime($ticket['created_at'] . ' + ' . ($ticket['response_time_hrs'] ?? 4) . ' hours'));
+
+    // Fetch Activity Trail
+    $stmt = $pdo->prepare("
+        SELECT ta.*, u.name as actor
+        FROM ticket_activities ta
+        JOIN users u ON ta.user_id = u.id
+        WHERE ta.ticket_id = ?
+        ORDER BY ta.created_at DESC
+    ");
+    $stmt->execute([$ticket_id]);
+    $activities = $stmt->fetchAll();
+
+} catch (PDOException $e) {
+    die("Database error: " . $e->getMessage());
+}
 
 $priority_map = ['critical'=>'badge-critical','high'=>'badge-high','low'=>'badge-low'];
 $status_map   = ['open'=>'badge-open','in_progress'=>'badge-in-progress','resolved'=>'badge-resolved','closed'=>'badge-closed'];
@@ -48,7 +78,7 @@ $status_map   = ['open'=>'badge-open','in_progress'=>'badge-in-progress','resolv
                 <?php echo ucfirst(str_replace('_',' ',$ticket['status'])); ?>
             </span>
             <span style="font-size:.8125rem;color:var(--text-muted);">
-                SLA Deadline: <strong style="color:var(--priority-critical-text);"><?php echo $ticket['sla_deadline']; ?></strong>
+                SLA Deadline: <strong style="color:var(--priority-critical-text);"><?php echo formatDate($deadline); ?></strong>
             </span>
         </div>
     </div>
@@ -79,18 +109,34 @@ $status_map   = ['open'=>'badge-open','in_progress'=>'badge-in-progress','resolv
             <div class="ts-card-header"><h5 class="ts-card-title">Activity Trail</h5></div>
             <div class="ts-card-body" style="padding-bottom:.5rem;">
                 <ul class="activity-trail">
-                    <?php foreach ($activity as $a): ?>
+                    <?php foreach ($activities as $a): ?>
                     <li class="activity-item">
-                        <div class="activity-dot <?php echo $a['dot']; ?>"></div>
+                        <div class="activity-dot <?php 
+                            if (strpos($a['action'], 'resolved') !== false) echo 'green';
+                            elseif (strpos($a['action'], 'Progress') !== false) echo 'blue';
+                            elseif (strpos($a['action'], 'critical') !== false) echo 'red';
+                            else echo 'silver';
+                        ?>"></div>
                         <div class="activity-body">
                             <div class="activity-text">
                                 <strong><?php echo htmlspecialchars($a['actor']); ?></strong> —
                                 <?php echo htmlspecialchars($a['action']); ?>
+                                <?php if ($a['note']): ?>
+                                    <p class="mt-1 mb-0 text-muted" style="font-size: 0.85rem; font-style: italic;">"<?php echo htmlspecialchars($a['note']); ?>"</p>
+                                <?php endif; ?>
                             </div>
-                            <div class="activity-meta"><?php echo $a['time']; ?></div>
+                            <div class="activity-meta"><?php echo formatDate($a['created_at']); ?></div>
                         </div>
                     </li>
                     <?php endforeach; ?>
+                    <?php if (empty($activities)): ?>
+                        <li class="activity-item">
+                            <div class="activity-dot silver"></div>
+                            <div class="activity-body">
+                                <div class="activity-text text-muted">No activity recorded yet.</div>
+                            </div>
+                        </li>
+                    <?php endif; ?>
                 </ul>
             </div>
         </div>
@@ -104,12 +150,11 @@ $status_map   = ['open'=>'badge-open','in_progress'=>'badge-in-progress','resolv
             <div class="ts-card-body">
                 <?php
                 $meta = [
-                    'Client'       => $ticket['client'],
-                    'Contact'      => $ticket['contact'],
-                    'Assigned To'  => $ticket['assigned'],
-                    'Created'      => $ticket['created'],
-                    'Last Updated' => $ticket['updated'],
-                    'SLA Deduction' => isset($ticket['deducted_hours']) ? $ticket['deducted_hours'] . ' hours' : null,
+                    'Client'        => $ticket['client'],
+                    'Contact'       => $ticket['contact'],
+                    'Created By'    => $ticket['creator_name'],
+                    'Created Date'  => formatDate($ticket['created_at']),
+                    'SLA Deduction' => isset($ticket['deducted_hours']) ? number_format($ticket['deducted_hours'], 1) . ' hours' : null,
                 ];
                 foreach ($meta as $label => $val): ?>
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:.625rem 0;border-bottom:1px solid var(--border-color);">

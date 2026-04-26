@@ -1,47 +1,119 @@
 <?php
 // dashboard.php — Pair A
-// Main hub for authorised users. Dummy data only.
+// Main hub for authorised users.
 require '../includes/auth.php';
+require '../includes/db.php';
+require '../includes/functions.php';
 require '../includes/header.php';
 
-// ── Dummy Data ──
-$kpi = [
-    'open_tickets'    => 14,
-    'in_progress'     => 6,
-    'resolved_today'  => 3,
-    'sla_compliance'  => '98.2%',
-];
+// Fetch real data from database
+try {
+    if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
+        // ADMIN KPI
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM tickets WHERE status = 'open'");
+        $stmt->execute();
+        $open_tickets = $stmt->fetchColumn();
 
-$recent_tickets = [
-    ['id'=>1021,'subject'=>'Network switch failure in Server Room B','priority'=>'critical','status'=>'open',       'client'=>'Acme Corp',    'created'=>'2026-04-25'],
-    ['id'=>1020,'subject'=>'Outlook not syncing for 5 users',        'priority'=>'high',    'status'=>'in_progress','client'=>'Globe BPO',    'created'=>'2026-04-25'],
-    ['id'=>1019,'subject'=>'Printer offline — Finance floor',         'priority'=>'low',     'status'=>'open',       'client'=>'BPI Office',   'created'=>'2026-04-24'],
-    ['id'=>1018,'subject'=>'WiFi intermittent — Conference Room 3',   'priority'=>'low',     'status'=>'resolved',   'client'=>'SM Supermall','created'=>'2026-04-24'],
-    ['id'=>1017,'subject'=>'Laptop battery replacement request',      'priority'=>'low',     'status'=>'resolved',   'client'=>'Robinsons',   'created'=>'2026-04-23'],
-];
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM tickets WHERE status = 'in_progress'");
+        $stmt->execute();
+        $in_progress = $stmt->fetchColumn();
 
-$upcoming_maintenance = [
-    ['date'=>'2026-04-28','client'=>'Acme Corp',    'type'=>'Quarterly Server Check',      'technician'=>'J. Reyes'],
-    ['date'=>'2026-04-30','client'=>'Globe BPO',    'type'=>'Network Audit',               'technician'=>'M. Santos'],
-    ['date'=>'2026-05-02','client'=>'BPI Office',   'type'=>'UPS Battery Replacement',    'technician'=>'J. Reyes'],
-];
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM tickets WHERE DATE(resolved_at) = CURDATE() AND status = 'resolved'");
+        $stmt->execute();
+        $resolved_today = $stmt->fetchColumn();
 
-// Filter data if client
-if (isset($_SESSION['role']) && $_SESSION['role'] === 'client') {
-    $my_client_name = 'Acme Corp'; // Dummy: in real app, get from session/DB
-    $recent_tickets = array_filter($recent_tickets, function($t) use ($my_client_name) {
-        return $t['client'] === $my_client_name;
-    });
-    $upcoming_maintenance = array_filter($upcoming_maintenance, function($m) use ($my_client_name) {
-        return $m['client'] === $my_client_name;
-    });
-    $kpi = [
-        'open_tickets'    => 2,
-        'in_progress'     => 1,
-        'resolved_today'  => 0,
-        'sla_pool'        => '74.5',
-        'sla_total'       => '100',
-    ];
+        // Simple SLA compliance for admin: average of all reports
+        $stmt = $pdo->prepare("SELECT AVG(compliance_pct) FROM reports");
+        $stmt->execute();
+        $sla_compliance = round($stmt->fetchColumn() ?? 100, 1) . '%';
+
+        $kpi = [
+            'open_tickets'   => $open_tickets,
+            'in_progress'    => $in_progress,
+            'resolved_today' => $resolved_today,
+            'sla_compliance' => $sla_compliance,
+        ];
+
+        // Recent Tickets (all)
+        $stmt = $pdo->prepare("
+            SELECT t.*, c.company_name as client
+            FROM tickets t
+            JOIN clients c ON t.client_id = c.id
+            ORDER BY t.created_at DESC LIMIT 5
+        ");
+        $stmt->execute();
+        $recent_tickets = $stmt->fetchAll();
+
+        // Upcoming Maintenance (all)
+        $stmt = $pdo->prepare("
+            SELECT m.*, c.company_name as client, u.name as technician
+            FROM maintenance_logs m
+            JOIN clients c ON m.client_id = c.id
+            JOIN users u ON m.performed_by = u.id
+            WHERE m.status = 'scheduled'
+            ORDER BY m.scheduled_at ASC LIMIT 5
+        ");
+        $stmt->execute();
+        $upcoming_maintenance = $stmt->fetchAll();
+    } else {
+        // CLIENT KPI
+        $client_id = $_SESSION['client_id'];
+
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM tickets WHERE client_id = ? AND status = 'open'");
+        $stmt->execute([$client_id]);
+        $open_tickets = $stmt->fetchColumn();
+
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM tickets WHERE client_id = ? AND status = 'in_progress'");
+        $stmt->execute([$client_id]);
+        $in_progress = $stmt->fetchColumn();
+
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM tickets WHERE client_id = ? AND DATE(resolved_at) = CURDATE()");
+        $stmt->execute([$client_id]);
+        $resolved_today = $stmt->fetchColumn();
+
+        // SLA Pool
+        $stmt = $pdo->prepare("SELECT monthly_hours_pool, hours_used FROM sla_contracts WHERE client_id = ? AND is_active = 1");
+        $stmt->execute([$client_id]);
+        $sla = $stmt->fetch();
+        $sla_pool = ($sla['monthly_hours_pool'] ?? 0) - ($sla['hours_used'] ?? 0);
+        $sla_total = $sla['monthly_hours_pool'] ?? 0;
+
+        $kpi = [
+            'open_tickets'   => $open_tickets,
+            'in_progress'    => $in_progress,
+            'resolved_today' => $resolved_today,
+            'sla_pool'       => $sla_pool,
+            'sla_total'      => $sla_total,
+        ];
+
+        // Recent Tickets (mine)
+        $stmt = $pdo->prepare("
+            SELECT t.*, c.company_name as client
+            FROM tickets t
+            JOIN clients c ON t.client_id = c.id
+            WHERE t.client_id = ?
+            ORDER BY t.created_at DESC LIMIT 5
+        ");
+        $stmt->execute([$client_id]);
+        $recent_tickets = $stmt->fetchAll();
+
+        // Upcoming Maintenance (mine)
+        $stmt = $pdo->prepare("
+            SELECT m.*, c.company_name as client, u.name as technician
+            FROM maintenance_logs m
+            JOIN clients c ON m.client_id = c.id
+            JOIN users u ON m.performed_by = u.id
+            WHERE m.client_id = ? AND m.status = 'scheduled'
+            ORDER BY m.scheduled_at ASC LIMIT 5
+        ");
+        $stmt->execute([$client_id]);
+        $upcoming_maintenance = $stmt->fetchAll();
+    }
+} catch (PDOException $e) {
+    // Handle error gracefully
+    $recent_tickets = [];
+    $upcoming_maintenance = [];
+    $kpi = ['open_tickets'=>0, 'in_progress'=>0, 'resolved_today'=>0, 'sla_compliance'=>'0%', 'sla_pool'=>0, 'sla_total'=>0];
 }
 ?>
 
@@ -185,10 +257,10 @@ if (isset($_SESSION['role']) && $_SESSION['role'] === 'client') {
                     <li class="activity-item">
                         <div class="activity-dot navy"></div>
                         <div class="activity-body">
-                            <div class="activity-text" style="font-weight:600;"><?php echo htmlspecialchars($m['type']); ?></div>
+                            <div class="activity-text" style="font-weight:600;"><?php echo htmlspecialchars($m['title']); ?></div>
                             <div class="activity-meta">
                                 <?php echo htmlspecialchars($m['client']); ?> &middot;
-                                <?php echo htmlspecialchars($m['date']); ?> &middot;
+                                <?php echo formatDate($m['scheduled_at']); ?> &middot;
                                 <?php echo htmlspecialchars($m['technician']); ?>
                             </div>
                         </div>

@@ -1,22 +1,35 @@
 <?php
 // users.php — Pair A
-// User list table. Dummy data only.
+// User list table.
 require '../includes/auth.php';
+require '../includes/db.php';
 require '../includes/header.php';
 
-$users = [
-    ['id'=>1,'name'=>'Raven Villanueva','email'=>'raven@techniServe.ph',   'role'=>'admin',      'client'=>'—',           'status'=>'active',  'last_login'=>'2026-04-25 08:14'],
-    ['id'=>2,'name'=>'Joel Reyes',      'email'=>'j.reyes@techniServe.ph', 'role'=>'technician', 'client'=>'—',           'status'=>'active',  'last_login'=>'2026-04-25 07:55'],
-    ['id'=>3,'name'=>'Marco Santos',    'email'=>'m.santos@techniServe.ph','role'=>'technician', 'client'=>'—',           'status'=>'active',  'last_login'=>'2026-04-24 17:32'],
-    ['id'=>4,'name'=>'Maria Santos',    'email'=>'m.santos@acme.ph',       'role'=>'client',     'client'=>'Acme Corp',   'status'=>'active',  'last_login'=>'2026-04-25 09:02'],
-    ['id'=>5,'name'=>'Jose Dela Cruz',  'email'=>'j.delacruz@globe.ph',    'role'=>'client',     'client'=>'Globe BPO',   'status'=>'active',  'last_login'=>'2026-04-23 14:11'],
-    ['id'=>6,'name'=>'Ana Reyes',       'email'=>'a.reyes@bpi.ph',         'role'=>'client',     'client'=>'BPI Office',  'status'=>'inactive','last_login'=>'2026-04-10 10:00'],
-];
+// Guard: Only Admin can access the users list
+if ($_SESSION['role'] !== 'admin') {
+    header('Location: dashboard.php');
+    exit();
+}
+
+try {
+    $stmt = $pdo->prepare("
+        SELECT u.*, c.company_name as client,
+               CASE WHEN u.is_active = 1 THEN 'active' ELSE 'inactive' END as status,
+               u.created_at as last_login -- Placeholder: schema lacks last_login, using created_at
+        FROM users u
+        LEFT JOIN clients c ON u.client_id = c.id
+        ORDER BY u.name ASC
+    ");
+    $stmt->execute();
+    $users = $stmt->fetchAll();
+} catch (PDOException $e) {
+    $users = [];
+    $error = "Failed to fetch users: " . $e->getMessage();
+}
 
 $r_map = [
-    'admin'      => 'badge-critical',
-    'technician' => 'badge-in-progress',
-    'client'     => 'badge-silver',
+    'admin'  => 'badge-critical',
+    'client' => 'badge-silver',
 ];
 $s_map = ['active'=>'badge-resolved','inactive'=>'badge-closed'];
 ?>
@@ -41,7 +54,6 @@ $s_map = ['active'=>'badge-resolved','inactive'=>'badge-closed'];
     <select id="filterUserRole" class="ts-form-control ts-form-select" onchange="filterUsers()">
         <option value="">All Roles</option>
         <option value="admin">Admin</option>
-        <option value="technician">Technician</option>
         <option value="client">Client</option>
     </select>
     <select id="filterUserStatus" class="ts-form-control ts-form-select" onchange="filterUsers()">

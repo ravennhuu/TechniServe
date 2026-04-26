@@ -1,11 +1,33 @@
 <?php
 // maintenance_create.php — Pair A
-// Log a new maintenance entry form. Dummy data only.
+// Log a new maintenance entry form.
 require '../includes/auth.php';
+require '../includes/db.php';
 require '../includes/header.php';
 
-$clients     = ['Acme Corp','Globe BPO','BPI Office','SM Supermall','Robinsons','Ayala Land','PLDT','Meralco'];
-$technicians = ['J. Reyes','M. Santos','R. Cruz','A. dela Rosa'];
+// Guard: Only Admin can log maintenance
+if ($_SESSION['role'] !== 'admin') {
+    header('Location: maintenance.php');
+    exit();
+}
+
+try {
+    $stmt = $pdo->prepare("SELECT id, company_name FROM clients ORDER BY company_name ASC");
+    $stmt->execute();
+    $clients = $stmt->fetchAll();
+
+    $stmt = $pdo->prepare("SELECT id, name FROM users WHERE role = 'admin' ORDER BY name ASC");
+    $stmt->execute();
+    $technicians = $stmt->fetchAll();
+
+    $stmt = $pdo->prepare("SELECT id, subject, client_id FROM tickets WHERE status != 'closed' ORDER BY id DESC");
+    $stmt->execute();
+    $tickets = $stmt->fetchAll();
+} catch (PDOException $e) {
+    $clients = [];
+    $technicians = [];
+    $tickets = [];
+}
 ?>
 
 <nav style="font-size:.8125rem;color:var(--text-muted);margin-bottom:1.25rem;">
@@ -29,6 +51,20 @@ $technicians = ['J. Reyes','M. Santos','R. Cruz','A. dela Rosa'];
             <div class="ts-card-body">
                 <form action="api/maintenance/create.php" method="POST" id="maintenanceForm">
 
+                    <div class="ts-form-group">
+                        <label class="ts-form-label" for="mainTicket">
+                            Related Ticket <span class="required-star">*</span>
+                        </label>
+                        <select id="mainTicket" name="ticket_id" class="ts-form-control ts-form-select" required>
+                            <option value="">— Select Ticket —</option>
+                            <?php foreach ($tickets as $t): ?>
+                            <option value="<?php echo $t['id']; ?>" data-client="<?php echo $t['client_id']; ?>">
+                                #<?php echo $t['id']; ?>: <?php echo htmlspecialchars($t['subject']); ?>
+                            </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
                     <div class="row g-3">
                         <div class="col-sm-6">
                             <div class="ts-form-group">
@@ -37,8 +73,8 @@ $technicians = ['J. Reyes','M. Santos','R. Cruz','A. dela Rosa'];
                                 </label>
                                 <select id="mainClient" name="client_id" class="ts-form-control ts-form-select" required>
                                     <option value="">— Select Client —</option>
-                                    <?php foreach ($clients as $i => $c): ?>
-                                    <option value="<?php echo $i+1; ?>"><?php echo htmlspecialchars($c); ?></option>
+                                    <?php foreach ($clients as $c): ?>
+                                    <option value="<?php echo $c['id']; ?>"><?php echo htmlspecialchars($c['company_name']); ?></option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>
@@ -48,10 +84,10 @@ $technicians = ['J. Reyes','M. Santos','R. Cruz','A. dela Rosa'];
                                 <label class="ts-form-label" for="mainTech">
                                     Technician <span class="required-star">*</span>
                                 </label>
-                                <select id="mainTech" name="technician_id" class="ts-form-control ts-form-select" required>
-                                    <option value="">— Select Technician —</option>
-                                    <?php foreach ($technicians as $i => $t): ?>
-                                    <option value="<?php echo $i+1; ?>"><?php echo htmlspecialchars($t); ?></option>
+                                <select id="mainTech" name="performed_by" class="ts-form-control ts-form-select" required>
+                                    <option value="">— Select Admin —</option>
+                                    <?php foreach ($technicians as $t): ?>
+                                    <option value="<?php echo $t['id']; ?>"><?php echo htmlspecialchars($t['name']); ?></option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>
@@ -60,37 +96,42 @@ $technicians = ['J. Reyes','M. Santos','R. Cruz','A. dela Rosa'];
 
                     <div class="ts-form-group">
                         <label class="ts-form-label" for="mainType">
-                            Maintenance Type <span class="required-star">*</span>
+                            Activity Type <span class="required-star">*</span>
                         </label>
-                        <select id="mainType" name="type" class="ts-form-control ts-form-select" required>
+                        <select id="mainType" name="activity_type" class="ts-form-control ts-form-select" required>
                             <option value="">— Select Type —</option>
-                            <option value="quarterly_server_check">Quarterly Server Check</option>
+                            <option value="patch">Patching / Updates</option>
+                            <option value="backup">Data Backup</option>
                             <option value="network_audit">Network Audit</option>
-                            <option value="ups_battery">UPS Battery Replacement</option>
-                            <option value="cctv_inspection">CCTV System Inspection</option>
-                            <option value="firewall_update">Firewall Firmware Update</option>
-                            <option value="workstation_cleanup">Workstation Cleanup</option>
+                            <option value="hardware_repair">Hardware Repair</option>
+                            <option value="software_install">Software Installation</option>
+                            <option value="site_visit">Site Visit</option>
+                            <option value="remote_support">Remote Support</option>
                             <option value="other">Other</option>
                         </select>
                     </div>
 
                     <div class="row g-3">
-                        <div class="col-sm-6">
+                        <div class="col-sm-4">
                             <div class="ts-form-group">
-                                <label class="ts-form-label" for="mainDate">
-                                    Date <span class="required-star">*</span>
-                                </label>
+                                <label class="ts-form-label" for="mainDate">Date <span class="required-star">*</span></label>
                                 <input type="date" id="mainDate" name="date" class="ts-form-control" required
                                     value="<?php echo date('Y-m-d'); ?>">
                             </div>
                         </div>
-                        <div class="col-sm-6">
+                        <div class="col-sm-4">
                             <div class="ts-form-group">
-                                <label class="ts-form-label" for="mainStatus">
-                                    Status <span class="required-star">*</span>
-                                </label>
+                                <label class="ts-form-label" for="mainHours">Hours Spent</label>
+                                <input type="number" step="0.5" id="mainHours" name="hours_spent" class="ts-form-control"
+                                    value="1.0" min="0">
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="ts-form-group">
+                                <label class="ts-form-label" for="mainStatus">Status <span class="required-star">*</span></label>
                                 <select id="mainStatus" name="status" class="ts-form-control ts-form-select" required>
                                     <option value="scheduled">Scheduled</option>
+                                    <option value="in_progress">In Progress</option>
                                     <option value="completed">Completed</option>
                                     <option value="cancelled">Cancelled</option>
                                 </select>
@@ -99,8 +140,8 @@ $technicians = ['J. Reyes','M. Santos','R. Cruz','A. dela Rosa'];
                     </div>
 
                     <div class="ts-form-group">
-                        <label class="ts-form-label" for="mainNotes">Notes</label>
-                        <textarea id="mainNotes" name="notes" class="ts-form-control" rows="4"
+                        <label class="ts-form-label" for="mainDesc">Description</label>
+                        <textarea id="mainDesc" name="description" class="ts-form-control" rows="4"
                             placeholder="Summary of work performed, equipment checked, issues found…"></textarea>
                     </div>
 

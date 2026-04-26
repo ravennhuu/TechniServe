@@ -1,27 +1,40 @@
 <?php
 // tickets.php — Pair A
-// List and filter support tickets. Dummy data only.
+// List and filter support tickets.
 require '../includes/auth.php';
+require '../includes/db.php';
 require '../includes/header.php';
 
-// ── Dummy Data ──
-$tickets = [
-    ['id'=>1021,'subject'=>'Network switch failure in Server Room B',    'priority'=>'critical','status'=>'open',       'client'=>'Acme Corp',    'assigned'=>'J. Reyes',  'created'=>'2026-04-25'],
-    ['id'=>1020,'subject'=>'Outlook not syncing for 5 users',            'priority'=>'high',   'status'=>'in_progress','client'=>'Globe BPO',    'assigned'=>'M. Santos', 'created'=>'2026-04-25'],
-    ['id'=>1019,'subject'=>'Printer offline — Finance floor',             'priority'=>'low',    'status'=>'open',       'client'=>'BPI Office',   'assigned'=>'Unassigned','created'=>'2026-04-24'],
-    ['id'=>1018,'subject'=>'WiFi intermittent — Conference Room 3',       'priority'=>'low',    'status'=>'resolved',   'client'=>'SM Supermall','assigned'=>'J. Reyes',  'created'=>'2026-04-24', 'deducted_hours' => 1.5],
-    ['id'=>1017,'subject'=>'Laptop battery replacement request',          'priority'=>'low',    'status'=>'resolved',   'client'=>'Robinsons',   'assigned'=>'M. Santos', 'created'=>'2026-04-23', 'deducted_hours' => 0.5],
-    ['id'=>1016,'subject'=>'Email server latency spike',                  'priority'=>'high',   'status'=>'closed',     'client'=>'Acme Corp',    'assigned'=>'J. Reyes',  'created'=>'2026-04-22', 'deducted_hours' => 3.0],
-    ['id'=>1015,'subject'=>'CCTV system not recording on Floor 2',        'priority'=>'critical','status'=>'in_progress','client'=>'Robinsons',   'assigned'=>'M. Santos', 'created'=>'2026-04-21'],
-    ['id'=>1014,'subject'=>'VPN access issue for remote employee',        'priority'=>'high',   'status'=>'open',       'client'=>'Globe BPO',    'assigned'=>'Unassigned','created'=>'2026-04-20'],
-];
-
-// Filter data if client
-if (isset($_SESSION['role']) && $_SESSION['role'] === 'client') {
-    $my_client_name = 'Acme Corp'; // Dummy
-    $tickets = array_filter($tickets, function($t) use ($my_client_name) {
-        return $t['client'] === $my_client_name;
-    });
+// Fetch real data from database
+try {
+    if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
+        // Admin sees all tickets
+        $stmt = $pdo->prepare("
+            SELECT t.*, c.company_name as client, 
+                   (SELECT SUM(hours_spent) FROM maintenance_logs WHERE ticket_id = t.id AND status = 'completed') as deducted_hours,
+                   t.created_at as created
+            FROM tickets t
+            JOIN clients c ON t.client_id = c.id
+            ORDER BY t.created_at DESC
+        ");
+        $stmt->execute();
+    } else {
+        // Client only sees their own tickets
+        $stmt = $pdo->prepare("
+            SELECT t.*, c.company_name as client,
+                   (SELECT SUM(hours_spent) FROM maintenance_logs WHERE ticket_id = t.id AND status = 'completed') as deducted_hours,
+                   t.created_at as created
+            FROM tickets t
+            JOIN clients c ON t.client_id = c.id
+            WHERE t.client_id = ?
+            ORDER BY t.created_at DESC
+        ");
+        $stmt->execute([$_SESSION['client_id']]);
+    }
+    $tickets = $stmt->fetchAll();
+} catch (PDOException $e) {
+    $tickets = [];
+    $error = "Failed to fetch tickets: " . $e->getMessage();
 }
 
 // Split into active and closed
@@ -170,7 +183,6 @@ $status_map   = ['open'=>'badge-open','in_progress'=>'badge-in-progress','resolv
                         <th>Priority</th>
                         <th>Status</th>
                         <th>Client</th>
-                        <th>Assigned To</th>
                         <th>SLA Deduction</th>
                         <th>Date</th>
                         <th style="text-align:center; white-space:nowrap;">Action</th>
@@ -196,7 +208,6 @@ $status_map   = ['open'=>'badge-open','in_progress'=>'badge-in-progress','resolv
                             </span>
                         </td>
                         <td class="text-muted-ts"><?php echo htmlspecialchars($t['client']); ?></td>
-                        <td class="text-muted-ts"><?php echo htmlspecialchars($t['assigned']); ?></td>
                         <td>
                             <?php if (isset($t['deducted_hours'])): ?>
                             <div style="display:flex; flex-direction:column;">

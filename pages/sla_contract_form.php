@@ -1,11 +1,37 @@
 <?php
 // sla_contract_form.php — Pair A
-// Create / Edit SLA contract form. Dummy data only.
+// Create / Edit SLA contract form.
 require '../includes/auth.php';
+require '../includes/db.php';
 require '../includes/header.php';
 
-$clients = ['Acme Corp','Globe BPO','BPI Office','SM Supermall','Robinsons','Ayala Land','PLDT','Meralco'];
-$editing = isset($_GET['id']); // true when editing
+// Guard: Only Admin can manage contracts
+if ($_SESSION['role'] !== 'admin') {
+    header('Location: sla_contracts.php');
+    exit();
+}
+
+$editing = isset($_GET['id']);
+$contract = null;
+
+try {
+    $stmt = $pdo->prepare("SELECT id, company_name FROM clients ORDER BY company_name ASC");
+    $stmt->execute();
+    $clients = $stmt->fetchAll();
+
+    if ($editing) {
+        $stmt = $pdo->prepare("SELECT * FROM sla_contracts WHERE id = ?");
+        $stmt->execute([$_GET['id']]);
+        $contract = $stmt->fetch();
+        
+        if (!$contract) {
+            header('Location: sla_contracts.php');
+            exit();
+        }
+    }
+} catch (PDOException $e) {
+    $clients = [];
+}
 ?>
 
 <nav style="font-size:.8125rem;color:var(--text-muted);margin-bottom:1.25rem;">
@@ -27,7 +53,8 @@ $editing = isset($_GET['id']); // true when editing
         <div class="ts-card">
             <div class="ts-card-header"><h5 class="ts-card-title">Contract Details</h5></div>
             <div class="ts-card-body">
-                <form action="api/sla/save.php" method="POST" id="slaForm">
+                <?php $sla_action = $editing ? '../api/sla/update.php' : '../api/sla/create.php'; ?>
+                <form action="<?php echo $sla_action; ?>" method="POST" id="slaForm">
                     <?php if ($editing): ?>
                     <input type="hidden" name="contract_id" value="<?php echo htmlspecialchars($_GET['id']); ?>">
                     <?php endif; ?>
@@ -38,35 +65,28 @@ $editing = isset($_GET['id']); // true when editing
                         </label>
                         <select id="slaClient" name="client_id" class="ts-form-control ts-form-select" required>
                             <option value="">— Select Client —</option>
-                            <?php foreach ($clients as $i => $c): ?>
-                            <option value="<?php echo $i+1; ?>"><?php echo htmlspecialchars($c); ?></option>
+                            <?php foreach ($clients as $c): ?>
+                            <option value="<?php echo $c['id']; ?>" <?php echo ($contract && $contract['client_id'] == $c['id']) ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($c['company_name']); ?>
+                            </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
 
-                    <div class="ts-form-group">
-                        <label class="ts-form-label" for="slaPlan">
-                            Service Plan <span class="required-star">*</span>
-                        </label>
-                        <select id="slaPlan" name="plan" class="ts-form-control ts-form-select" required>
-                            <option value="">— Select Plan —</option>
-                            <option value="basic">Basic</option>
-                            <option value="professional">Professional</option>
-                            <option value="enterprise">Enterprise</option>
-                        </select>
-                    </div>
 
                     <div class="row g-3">
                         <div class="col-sm-6">
                             <div class="ts-form-group">
                                 <label class="ts-form-label" for="slaStart">Start Date <span class="required-star">*</span></label>
-                                <input type="date" id="slaStart" name="start_date" class="ts-form-control" required>
+                                <input type="date" id="slaStart" name="start_date" class="ts-form-control" required
+                                    value="<?php echo $contract ? $contract['start_date'] : date('Y-m-d'); ?>">
                             </div>
                         </div>
                         <div class="col-sm-6">
                             <div class="ts-form-group">
                                 <label class="ts-form-label" for="slaEnd">End Date <span class="required-star">*</span></label>
-                                <input type="date" id="slaEnd" name="end_date" class="ts-form-control" required>
+                                <input type="date" id="slaEnd" name="end_date" class="ts-form-control" required
+                                    value="<?php echo $contract ? $contract['end_date'] : date('Y-m-d', strtotime('+1 year')); ?>">
                             </div>
                         </div>
                     </div>
@@ -75,27 +95,51 @@ $editing = isset($_GET['id']); // true when editing
                         <div class="col-sm-6">
                             <div class="ts-form-group">
                                 <label class="ts-form-label" for="slaHours">Monthly Support Hours</label>
-                                <input type="number" id="slaHours" name="support_hours" class="ts-form-control"
-                                    placeholder="e.g. 60 (leave blank for unlimited)">
+                                <input type="number" step="0.5" id="slaHours" name="monthly_hours_pool" class="ts-form-control"
+                                    placeholder="e.g. 20" value="<?php echo $contract ? $contract['monthly_hours_pool'] : '20'; ?>">
                             </div>
                         </div>
                         <div class="col-sm-6">
                             <div class="ts-form-group">
                                 <label class="ts-form-label" for="slaVisits">Site Visits per Year</label>
-                                <input type="number" id="slaVisits" name="site_visits" class="ts-form-control"
-                                    placeholder="e.g. 6 (leave blank for unlimited)">
+                                <input type="number" id="slaVisits" name="site_visits_included" class="ts-form-control"
+                                    placeholder="e.g. 2" value="<?php echo $contract ? $contract['site_visits_included'] : '2'; ?>">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <div class="ts-form-group">
+                                <label class="ts-form-label" for="slaResponse">Response Time SLA (hours) <span class="required-star">*</span></label>
+                                <select id="slaResponse" name="response_time_hrs" class="ts-form-control ts-form-select" required>
+                                    <option value="">— Select —</option>
+                                    <option value="1" <?php echo ($contract && $contract['response_time_hrs'] == 1) ? 'selected' : ''; ?>>1 Hour (Critical Enterprise)</option>
+                                    <option value="4" <?php echo ($contract && $contract['response_time_hrs'] == 4) ? 'selected' : ''; ?>>4 Hours (Professional)</option>
+                                    <option value="8" <?php echo ($contract && $contract['response_time_hrs'] == 8) ? 'selected' : ''; ?>>8 Hours (Basic)</option>
+                                    <option value="24" <?php echo ($contract && $contract['response_time_hrs'] == 24) ? 'selected' : ''; ?>>Next Business Day</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="ts-form-group">
+                                <label class="ts-form-label" for="slaResolution">Resolution Time SLA (hours) <span class="required-star">*</span></label>
+                                <select id="slaResolution" name="resolution_time_hrs" class="ts-form-control ts-form-select" required>
+                                    <option value="">— Select —</option>
+                                    <option value="4"  <?php echo ($contract && $contract['resolution_time_hrs'] == 4) ? 'selected' : ''; ?>>4 Hours</option>
+                                    <option value="12" <?php echo ($contract && $contract['resolution_time_hrs'] == 12) ? 'selected' : ''; ?>>12 Hours</option>
+                                    <option value="24" <?php echo ($contract && $contract['resolution_time_hrs'] == 24) ? 'selected' : ''; ?>>24 Hours</option>
+                                    <option value="48" <?php echo ($contract && $contract['resolution_time_hrs'] == 48) ? 'selected' : ''; ?>>48 Hours</option>
+                                </select>
                             </div>
                         </div>
                     </div>
 
                     <div class="ts-form-group">
-                        <label class="ts-form-label" for="slaResponse">Response Time SLA (hours) <span class="required-star">*</span></label>
-                        <select id="slaResponse" name="response_hours" class="ts-form-control ts-form-select" required>
-                            <option value="">— Select —</option>
-                            <option value="1">1 Hour (Critical Enterprise)</option>
-                            <option value="4">4 Hours (Professional)</option>
-                            <option value="8">8 Hours (Basic)</option>
-                            <option value="24">Next Business Day</option>
+                        <label class="ts-form-label" for="slaStatus">Contract Status</label>
+                        <select id="slaStatus" name="is_active" class="ts-form-control ts-form-select">
+                            <option value="1" <?php echo ($contract && $contract['is_active'] == 1) ? 'selected' : ''; ?>>Active</option>
+                            <option value="0" <?php echo ($contract && $contract['is_active'] == 0) ? 'selected' : ''; ?>>Inactive</option>
                         </select>
                     </div>
 

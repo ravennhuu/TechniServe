@@ -1,11 +1,37 @@
 <?php
 // user_form.php — Pair A
-// Create / Edit user form. Dummy data only.
+// Create / Edit user form.
 require '../includes/auth.php';
+require '../includes/db.php';
 require '../includes/header.php';
 
+// Guard: Only Admin can manage users
+if ($_SESSION['role'] !== 'admin') {
+    header('Location: dashboard.php');
+    exit();
+}
+
 $editing = isset($_GET['id']);
-$clients = ['Acme Corp','Globe BPO','BPI Office','SM Supermall','Robinsons','Ayala Land','PLDT','Meralco'];
+$user_data = null;
+
+try {
+    $stmt = $pdo->prepare("SELECT id, company_name FROM clients ORDER BY company_name ASC");
+    $stmt->execute();
+    $clients = $stmt->fetchAll();
+
+    if ($editing) {
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+        $stmt->execute([$_GET['id']]);
+        $user_data = $stmt->fetch();
+        
+        if (!$user_data) {
+            header('Location: users.php');
+            exit();
+        }
+    }
+} catch (PDOException $e) {
+    $clients = [];
+}
 ?>
 
 <nav style="font-size:.8125rem;color:var(--text-muted);margin-bottom:1.25rem;">
@@ -27,21 +53,26 @@ $clients = ['Acme Corp','Globe BPO','BPI Office','SM Supermall','Robinsons','Aya
         <div class="ts-card">
             <div class="ts-card-header"><h5 class="ts-card-title">User Details</h5></div>
             <div class="ts-card-body">
-                <form action="api/users/save.php" method="POST" id="userForm">
+                <?php $user_action = $editing ? '../api/users/update.php' : '../api/users/create.php'; ?>
+                <form action="<?php echo $user_action; ?>" method="POST" id="userForm">
                     <?php if ($editing): ?>
                     <input type="hidden" name="user_id" value="<?php echo (int)$_GET['id']; ?>">
                     <?php endif; ?>
 
                     <div class="ts-form-group">
                         <label class="ts-form-label" for="userName">Full Name <span class="required-star">*</span></label>
-                        <input type="text" id="userName" name="name" class="ts-form-control" placeholder="e.g. Joel Reyes" required>
+                        <input type="text" id="userName" name="name" class="ts-form-control" 
+                            value="<?php echo $user_data ? htmlspecialchars($user_data['name']) : ''; ?>"
+                            placeholder="e.g. Joel Reyes" required>
                     </div>
 
                     <div class="row g-3">
                         <div class="col-sm-6">
                             <div class="ts-form-group">
                                 <label class="ts-form-label" for="userEmail">Email Address <span class="required-star">*</span></label>
-                                <input type="email" id="userEmail" name="email" class="ts-form-control" placeholder="user@techniServe.ph" required>
+                                <input type="email" id="userEmail" name="email" class="ts-form-control" 
+                                    value="<?php echo $user_data ? htmlspecialchars($user_data['email']) : ''; ?>"
+                                    placeholder="user@techniServe.ph" required>
                             </div>
                         </div>
                         <div class="col-sm-6">
@@ -49,21 +80,22 @@ $clients = ['Acme Corp','Globe BPO','BPI Office','SM Supermall','Robinsons','Aya
                                 <label class="ts-form-label" for="userRole">Role <span class="required-star">*</span></label>
                                 <select id="userRole" name="role" class="ts-form-control ts-form-select" required onchange="toggleClientField()">
                                     <option value="">— Select Role —</option>
-                                    <option value="admin">Admin</option>
-                                    <option value="technician">Technician</option>
-                                    <option value="client">Client</option>
+                                    <option value="admin" <?php echo ($user_data && $user_data['role'] === 'admin') ? 'selected' : ''; ?>>Admin</option>
+                                    <option value="client" <?php echo ($user_data && $user_data['role'] === 'client') ? 'selected' : ''; ?>>Client</option>
                                 </select>
                             </div>
                         </div>
                     </div>
 
                     <!-- Only shown when role = client -->
-                    <div class="ts-form-group" id="clientField" style="display:none;">
+                    <div class="ts-form-group" id="clientField" style="display:<?php echo ($user_data && $user_data['role'] === 'client') ? 'block' : 'none'; ?>;">
                         <label class="ts-form-label" for="userClient">Client Account <span class="required-star">*</span></label>
                         <select id="userClient" name="client_id" class="ts-form-control ts-form-select">
                             <option value="">— Select Client —</option>
-                            <?php foreach ($clients as $i => $c): ?>
-                            <option value="<?php echo $i+1; ?>"><?php echo htmlspecialchars($c); ?></option>
+                            <?php foreach ($clients as $c): ?>
+                            <option value="<?php echo $c['id']; ?>" <?php echo ($user_data && $user_data['client_id'] == $c['id']) ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($c['company_name']); ?>
+                            </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -105,9 +137,9 @@ $clients = ['Acme Corp','Globe BPO','BPI Office','SM Supermall','Robinsons','Aya
 
                     <div class="ts-form-group">
                         <label class="ts-form-label" for="userStatus">Account Status</label>
-                        <select id="userStatus" name="status" class="ts-form-control ts-form-select">
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
+                        <select id="userStatus" name="is_active" class="ts-form-control ts-form-select">
+                            <option value="1" <?php echo ($user_data && $user_data['is_active'] == 1) ? 'selected' : ''; ?>>Active</option>
+                            <option value="0" <?php echo ($user_data && $user_data['is_active'] == 0) ? 'selected' : ''; ?>>Inactive</option>
                         </select>
                     </div>
 

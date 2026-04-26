@@ -1,12 +1,21 @@
 <?php
 // ticket_create.php — Pair A
-// Create new support ticket form. Dummy data only (no real submit logic).
+// Create new support ticket form.
 require '../includes/auth.php';
+require '../includes/db.php';
 require '../includes/header.php';
 
-// Dummy clients & technicians for dropdowns
-$clients = ['Acme Corp','Globe BPO','BPI Office','SM Supermall','Robinsons','Ayala Land','PLDT','Meralco'];
-$technicians = ['J. Reyes','M. Santos','R. Cruz','A. dela Rosa'];
+// Fetch real clients for admin dropdown
+$clients = [];
+if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
+    try {
+        $stmt = $pdo->prepare("SELECT id, company_name FROM clients ORDER BY company_name ASC");
+        $stmt->execute();
+        $clients = $stmt->fetchAll();
+    } catch (PDOException $e) {
+        $clients = [];
+    }
+}
 ?>
 
 <nav style="font-size:.8125rem;color:var(--text-muted);margin-bottom:1.25rem;">
@@ -69,8 +78,8 @@ $technicians = ['J. Reyes','M. Santos','R. Cruz','A. dela Rosa'];
                                 </label>
                                 <select id="ticketClient" name="client_id" class="ts-form-control ts-form-select" required>
                                     <option value="">— Select Client —</option>
-                                    <?php foreach ($clients as $i => $c): ?>
-                                    <option value="<?php echo $i+1; ?>"><?php echo htmlspecialchars($c); ?></option>
+                                    <?php foreach ($clients as $c): ?>
+                                    <option value="<?php echo $c['id']; ?>"><?php echo htmlspecialchars($c['company_name']); ?></option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>
@@ -79,19 +88,6 @@ $technicians = ['J. Reyes','M. Santos','R. Cruz','A. dela Rosa'];
                     </div>
 
                     <div class="row g-3">
-                        <?php if (isset($_SESSION['role']) && in_array($_SESSION['role'], ['admin', 'technician'])): ?>
-                        <div class="col-sm-6">
-                            <div class="ts-form-group">
-                                <label class="ts-form-label" for="ticketAssigned">Assign To</label>
-                                <select id="ticketAssigned" name="assigned_to" class="ts-form-control ts-form-select">
-                                    <option value="">— Unassigned —</option>
-                                    <?php foreach ($technicians as $i => $tech): ?>
-                                    <option value="<?php echo $i+1; ?>"><?php echo htmlspecialchars($tech); ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                        </div>
-                        <?php endif; ?>
                         <div class="col-sm-6">
                             <div class="ts-form-group">
                                 <label class="ts-form-label" for="ticketCategory">Category</label>

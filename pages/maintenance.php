@@ -1,37 +1,61 @@
 <?php
 // maintenance.php — Pair A
-// Preventive maintenance log table. Dummy data only.
+// Preventive maintenance log table.
 require '../includes/auth.php';
+require '../includes/db.php';
 require '../includes/header.php';
 
-// ── Dummy Data ──
-$logs = [
-    ['id'=>201,'date'=>'2026-04-25','client'=>'Acme Corp',   'type'=>'Quarterly Server Check',   'technician'=>'J. Reyes',  'status'=>'completed','notes'=>'All servers healthy. RAM and HDD checked.'],
-    ['id'=>200,'date'=>'2026-04-22','client'=>'Globe BPO',   'type'=>'Network Audit',             'technician'=>'M. Santos', 'status'=>'completed','notes'=>'Found unused open ports. Closed and documented.'],
-    ['id'=>199,'date'=>'2026-04-20','client'=>'BPI Office',  'type'=>'UPS Battery Replacement',   'technician'=>'J. Reyes',  'status'=>'completed','notes'=>'Replaced 3 UPS units on Floor 2.'],
-    ['id'=>198,'date'=>'2026-04-28','client'=>'SM Supermall','type'=>'CCTV System Inspection',    'technician'=>'R. Cruz',   'status'=>'scheduled','notes'=>'—'],
-    ['id'=>197,'date'=>'2026-04-30','client'=>'Robinsons',   'type'=>'Firewall Firmware Update',  'technician'=>'M. Santos', 'status'=>'scheduled','notes'=>'—'],
-    ['id'=>196,'date'=>'2026-04-18','client'=>'Ayala Land',  'type'=>'Workstation Cleanup',       'technician'=>'A. dela Rosa','status'=>'completed','notes'=>'50 workstations cleaned and updated.'],
-];
-
-$s_map = ['completed'=>'badge-resolved','scheduled'=>'badge-open','cancelled'=>'badge-closed'];
-
-// ── Role-based Filtering ──
 $is_client = (isset($_SESSION['role']) && $_SESSION['role'] === 'client');
-$my_client = 'Acme Corp'; // Dummy
 
-if ($is_client) {
-    $logs = array_filter($logs, function($l) use ($my_client) {
-        return $l['client'] === $my_client;
-    });
-    // Client-specific SLA pool dummy data
-    $pool_total = 100;
-    $pool_used = 25.5;
-} else {
-    $pool_total = 160;
-    $pool_used = 42.5;
+try {
+    if ($is_client) {
+        $client_id = $_SESSION['client_id'];
+        
+        // Logs for this client
+        $stmt = $pdo->prepare("
+            SELECT m.*, c.company_name as client, u.name as technician
+            FROM maintenance_logs m
+            JOIN clients c ON m.client_id = c.id
+            JOIN users u ON m.performed_by = u.id
+            WHERE m.client_id = ?
+            ORDER BY m.created_at DESC
+        ");
+        $stmt->execute([$client_id]);
+        $logs = $stmt->fetchAll();
+
+        // SLA Pool Status
+        $stmt = $pdo->prepare("SELECT monthly_hours_pool as total, hours_used as used FROM sla_contracts WHERE client_id = ? AND is_active = 1");
+        $stmt->execute([$client_id]);
+        $pool = $stmt->fetch();
+        $pool_total = $pool['total'] ?? 0;
+        $pool_used = $pool['used'] ?? 0;
+    } else {
+        // All logs for admin
+        $stmt = $pdo->prepare("
+            SELECT m.*, c.company_name as client, u.name as technician
+            FROM maintenance_logs m
+            JOIN clients c ON m.client_id = c.id
+            JOIN users u ON m.performed_by = u.id
+            ORDER BY m.created_at DESC
+        ");
+        $stmt->execute();
+        $logs = $stmt->fetchAll();
+
+        // Combined SLA Pool Status for Admin view
+        $stmt = $pdo->prepare("SELECT SUM(monthly_hours_pool) as total, SUM(hours_used) as used FROM sla_contracts WHERE is_active = 1");
+        $stmt->execute();
+        $pool = $stmt->fetch();
+        $pool_total = $pool['total'] ?? 0;
+        $pool_used = $pool['used'] ?? 0;
+    }
+} catch (PDOException $e) {
+    $logs = [];
+    $pool_total = 0;
+    $pool_used = 0;
 }
+
 $pool_remaining = $pool_total - $pool_used;
+$s_map = ['completed'=>'badge-resolved','scheduled'=>'badge-open','cancelled'=>'badge-closed'];
 ?>
 
 <div class="page-header">
@@ -121,14 +145,14 @@ $pool_remaining = $pool_total - $pool_used;
                 <?php foreach ($logs as $log): ?>
                 <tr>
                     <td class="col-id"><?php echo $log['id']; ?></td>
-                    <td style="font-size:.8125rem;white-space:nowrap;"><?php echo $log['date']; ?></td>
+                    <td style="font-size:.8125rem;white-space:nowrap;"><?php echo formatDate($log['created_at']); ?></td>
                     <td class="text-muted-ts"><?php echo htmlspecialchars($log['client']); ?></td>
-                    <td><?php echo htmlspecialchars($log['type']); ?></td>
+                    <td><?php echo htmlspecialchars($log['title']); ?></td>
                     <td class="text-muted-ts"><?php echo htmlspecialchars($log['technician']); ?></td>
                     <td>
                         <div style="display:flex; flex-direction:column;">
                             <span style="font-weight:600; color:var(--navy-deepest);">
-                                <?php echo (rand(2, 8)) . '.0h'; ?>
+                                <?php echo number_format($log['hours_spent'], 1) . 'h'; ?>
                             </span>
                             <span style="font-size:0.65rem; color:#059669; font-weight:700; text-transform:uppercase; letter-spacing:0.02em;">
                                 <svg width="8" height="8" fill="currentColor" viewBox="0 0 20 20" style="margin-right:2px;"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
