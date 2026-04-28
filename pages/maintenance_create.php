@@ -49,7 +49,15 @@ try {
         <div class="ts-card">
             <div class="ts-card-header"><h5 class="ts-card-title">Maintenance Details</h5></div>
             <div class="ts-card-body">
-                <form action="api/maintenance/create.php" method="POST" id="maintenanceForm">
+                <form action="../api/maintenance/create.php" method="POST" id="maintenanceForm">
+
+                    <div class="ts-form-group">
+                        <label class="ts-form-label" for="mainTitle">
+                            Title <span class="required-star">*</span>
+                        </label>
+                        <input type="text" id="mainTitle" name="title" class="ts-form-control"
+                            placeholder="e.g. Monthly patch deployment on Acme servers" required>
+                    </div>
 
                     <div class="ts-form-group">
                         <label class="ts-form-label" for="mainTicket">
@@ -157,5 +165,39 @@ try {
         </div>
     </div>
 </div>
+
+<script>
+/* Auto-populate client when a ticket is selected */
+var ticketSelect = document.getElementById('mainTicket');
+var clientSelect = document.getElementById('mainClient');
+if (ticketSelect && clientSelect) {
+    ticketSelect.addEventListener('change', function () {
+        var opt = this.options[this.selectedIndex];
+        var cid = opt ? opt.getAttribute('data-client') : '';
+        if (cid) {
+            for (var i = 0; i < clientSelect.options.length; i++) {
+                if (clientSelect.options[i].value === cid) {
+                    clientSelect.selectedIndex = i;
+                    break;
+                }
+            }
+        }
+    });
+}
+
+submitFormAjax('#maintenanceForm', {
+    successTitle:   'Maintenance Logged!',
+    successMessage: 'The maintenance entry has been saved. SLA hours will be deducted if the status is Completed.',
+    redirectUrl:    'maintenance.php',
+    errorTitle:     'Could Not Save Entry',
+    validate: function(form) {
+        var hours = form.querySelector('#mainHours');
+        if (hours && parseFloat(hours.value) < 0) {
+            showError('Invalid Hours', 'Hours spent cannot be negative.');
+            return false;
+        }
+    }
+});
+</script>
 
 <?php require '../includes/footer.php'; ?>

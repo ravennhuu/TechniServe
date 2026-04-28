@@ -37,7 +37,7 @@ if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
         <div class="ts-card">
             <div class="ts-card-header"><h5 class="ts-card-title">Ticket Information</h5></div>
             <div class="ts-card-body">
-                <form action="api/tickets/create.php" method="POST" id="createTicketForm">
+                <form action="../api/tickets/create.php" method="POST" id="createTicketForm">
 
                     <div class="ts-form-group">
                         <label class="ts-form-label" for="ticketSubject">
@@ -143,5 +143,21 @@ if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
         </div>
     </div>
 </div>
+
+<script>
+submitFormAjax('#createTicketForm', {
+    successTitle:   'Ticket Created!',
+    successMessage: 'Your support ticket has been submitted successfully.',
+    redirectUrl:    'tickets.php',
+    errorTitle:     'Could Not Create Ticket',
+    validate: function(form) {
+        var priority = form.querySelector('#ticketPriority');
+        if (priority && !priority.value) {
+            showError('Missing Information', 'Please select a priority level before submitting.');
+            return false;
+        }
+    }
+});
+</script>
 
 <?php require '../includes/footer.php'; ?>

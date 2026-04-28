@@ -120,4 +120,17 @@ try {
     </div>
 </div>
 
+<script>
+var isEditing = <?php echo $editing ? 'true' : 'false'; ?>;
+
+submitFormAjax('#clientForm', {
+    successTitle:   isEditing ? 'Client Updated!' : 'Client Created!',
+    successMessage: isEditing
+        ? 'The client profile has been updated successfully.'
+        : 'New client profile has been created successfully.',
+    redirectUrl:    'clients.php',
+    errorTitle:     'Could Not Save Client'
+});
+</script>
+
 <?php require '../includes/footer.php'; ?>

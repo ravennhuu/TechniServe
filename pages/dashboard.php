@@ -22,6 +22,10 @@ try {
         $stmt->execute();
         $resolved_today = $stmt->fetchColumn();
 
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM tickets WHERE DATE(created_at) = CURDATE()");
+        $stmt->execute();
+        $new_today = $stmt->fetchColumn();
+
         // Simple SLA compliance for admin: average of all reports
         $stmt = $pdo->prepare("SELECT AVG(compliance_pct) FROM reports");
         $stmt->execute();
@@ -31,6 +35,7 @@ try {
             'open_tickets'   => $open_tickets,
             'in_progress'    => $in_progress,
             'resolved_today' => $resolved_today,
+            'new_today'      => $new_today,
             'sla_compliance' => $sla_compliance,
         ];
 
@@ -71,6 +76,10 @@ try {
         $stmt->execute([$client_id]);
         $resolved_today = $stmt->fetchColumn();
 
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM tickets WHERE client_id = ? AND DATE(created_at) = CURDATE()");
+        $stmt->execute([$client_id]);
+        $new_today = $stmt->fetchColumn();
+
         // SLA Pool
         $stmt = $pdo->prepare("SELECT monthly_hours_pool, hours_used FROM sla_contracts WHERE client_id = ? AND is_active = 1");
         $stmt->execute([$client_id]);
@@ -82,6 +91,7 @@ try {
             'open_tickets'   => $open_tickets,
             'in_progress'    => $in_progress,
             'resolved_today' => $resolved_today,
+            'new_today'      => $new_today,
             'sla_pool'       => $sla_pool,
             'sla_total'      => $sla_total,
         ];
@@ -113,7 +123,7 @@ try {
     // Handle error gracefully
     $recent_tickets = [];
     $upcoming_maintenance = [];
-    $kpi = ['open_tickets'=>0, 'in_progress'=>0, 'resolved_today'=>0, 'sla_compliance'=>'0%', 'sla_pool'=>0, 'sla_total'=>0];
+    $kpi = ['open_tickets'=>0, 'in_progress'=>0, 'resolved_today'=>0, 'new_today'=>0, 'sla_compliance'=>'0%', 'sla_pool'=>0, 'sla_total'=>0];
 }
 ?>
 
@@ -140,7 +150,7 @@ try {
             <div class="kpi-data">
                 <div class="kpi-value"><?php echo $kpi['open_tickets']; ?></div>
                 <div class="kpi-label">Open Tickets</div>
-                <div class="kpi-trend up">↑ 3 since yesterday</div>
+                <div class="kpi-trend up">↑ <?php echo $kpi['new_today']; ?> new today</div>
             </div>
         </div>
     </div>
@@ -152,7 +162,7 @@ try {
             <div class="kpi-data">
                 <div class="kpi-value"><?php echo $kpi['in_progress']; ?></div>
                 <div class="kpi-label">In Progress</div>
-                <div class="kpi-trend" style="color:var(--steel-blue)">Assigned to technicians</div>
+                <div class="kpi-trend" style="color:var(--steel-blue)">Currently active</div>
             </div>
         </div>
     </div>
@@ -164,7 +174,7 @@ try {
             <div class="kpi-data">
                 <div class="kpi-value"><?php echo $kpi['resolved_today']; ?></div>
                 <div class="kpi-label">Resolved Today</div>
-                <div class="kpi-trend up">↑ On track</div>
+                <div class="kpi-trend up">Completed today</div>
             </div>
         </div>
     </div>
@@ -180,11 +190,11 @@ try {
                     <span style="font-size: 0.9rem; font-weight: 400; opacity: 0.7;">/ <?php echo $kpi['sla_total']; ?>h</span>
                 </div>
                 <div class="kpi-label">Remaining SLA Pool</div>
-                <div class="kpi-trend up">↑ Health: Good</div>
+                <div class="kpi-trend up">Active SLA balance</div>
                 <?php else: ?>
                 <div class="kpi-value"><?php echo $kpi['sla_compliance']; ?></div>
                 <div class="kpi-label">SLA Compliance</div>
-                <div class="kpi-trend up">↑ Above 98% target</div>
+                <div class="kpi-trend up">System average</div>
                 <?php endif; ?>
             </div>
         </div>

@@ -164,4 +164,25 @@ try {
     </div>
 </div>
 
+<script>
+var isEditing = <?php echo $editing ? 'true' : 'false'; ?>;
+
+submitFormAjax('#slaForm', {
+    successTitle:   isEditing ? 'Contract Updated!' : 'Contract Created!',
+    successMessage: isEditing
+        ? 'The SLA contract has been updated successfully.'
+        : 'New SLA contract has been created and activated. Any previous active contract for this client has been deactivated.',
+    redirectUrl:    'sla_contracts.php',
+    errorTitle:     'Could Not Save Contract',
+    validate: function(form) {
+        var start = form.querySelector('#slaStart');
+        var end   = form.querySelector('#slaEnd');
+        if (start && end && start.value && end.value && start.value >= end.value) {
+            showError('Invalid Dates', 'The end date must be after the start date.');
+            return false;
+        }
+    }
+});
+</script>
+
 <?php require '../includes/footer.php'; ?>

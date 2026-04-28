@@ -70,7 +70,7 @@ require '../includes/header.php';
             <?php else: ?>
                 <div class="ts-card-header"><h5 class="ts-card-title">Edit Profile</h5></div>
                 <div class="ts-card-body">
-                    <form action="api/users/update_profile.php" method="POST" id="profileForm">
+                    <form action="../api/users/update_profile.php" method="POST" id="profileForm">
 
                         <div class="row g-3">
                             <div class="col-sm-6">
@@ -130,5 +130,42 @@ require '../includes/header.php';
     </div>
 
 </div>
+
+<script>
+submitFormAjax('#profileForm', {
+    successTitle:   'Profile Updated!',
+    successMessage: 'Your profile information has been saved successfully.',
+    redirectUrl:    null,   /* Stay on page */
+    errorTitle:     'Update Failed',
+    validate: function(form) {
+        var newPass  = form.querySelector('#newPass');
+        var currPass = form.querySelector('#currentPass');
+        if (newPass && newPass.value) {
+            if (!currPass || !currPass.value) {
+                showError('Current Password Required', 'Please enter your current password to set a new one.');
+                return false;
+            }
+            if (newPass.value.length < 8) {
+                showError('Password Too Short', 'New password must be at least 8 characters long.');
+                return false;
+            }
+        }
+    },
+    onSuccess: function(data) {
+        /* Refresh the displayed name in the topbar avatar without reload */
+        var nameInput = document.getElementById('profileName');
+        if (nameInput) {
+            var displayName = nameInput.value;
+            document.querySelectorAll('.topbar-user div[style*="font-weight:600"]').forEach(function(el) {
+                el.textContent = displayName;
+            });
+            var avatarEl = document.querySelector('.avatar');
+            if (avatarEl) avatarEl.textContent = displayName.charAt(0).toUpperCase();
+            var avatarInit = document.querySelector('.avatar-initials');
+            if (avatarInit) avatarInit.textContent = displayName.charAt(0).toUpperCase();
+        }
+    }
+});
+</script>
 
 <?php require '../includes/footer.php'; ?>

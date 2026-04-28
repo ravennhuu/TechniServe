@@ -28,24 +28,16 @@ try {
         $_SESSION['role']      = $user['role'];
         $_SESSION['name']      = $user['name'];
         $_SESSION['email']     = $user['email'];
-        $_SESSION['client_id'] = $user['client_id']; // Essential for client-side filtering
+        $_SESSION['client_id'] = $user['client_id'];
 
-        // If AJAX request, return JSON. If standard form POST, redirect.
-        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
-            echo json_encode(['success' => true, 'redirect' => '../../pages/dashboard.php']);
-        } else {
-header('Location: ../../pages/dashboard.php');
-        }
+        echo json_encode(['success' => true, 'redirect' => 'pages/dashboard.php']);
         exit();
     } else {
-        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
-            echo json_encode(['success' => false, 'message' => 'Invalid email, password, or role selection.']);
-        } else {
-            header('Location: ../../login.php?error=1');
-        }
+        echo json_encode(['success' => false, 'message' => 'Invalid email, password, or role selection.']);
         exit();
     }
 } catch (PDOException $e) {
     echo json_encode(['success' => false, 'message' => 'System error. Please try again later.']);
-exit();
+    exit();
 }
+

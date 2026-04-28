@@ -96,16 +96,10 @@ $s_map = ['pending'=>'badge-open', 'approved'=>'badge-resolved', 'rejected'=>'ba
                     <td>
                         <?php if ($lead['status'] === 'pending'): ?>
                         <div style="display:flex;gap:.375rem;">
-                            <form action="../api/leads/update.php" method="POST" style="display:inline;">
-                                <input type="hidden" name="id" value="<?php echo $lead['id']; ?>">
-                                <input type="hidden" name="status" value="approved">
-                                <button type="submit" class="btn-ts-success btn-ts-sm">Approve</button>
-                            </form>
-                            <form action="../api/leads/update.php" method="POST" style="display:inline;">
-                                <input type="hidden" name="id" value="<?php echo $lead['id']; ?>">
-                                <input type="hidden" name="status" value="rejected">
-                                <button type="submit" class="btn-ts-danger btn-ts-sm">Reject</button>
-                            </form>
+                            <button type="button" class="btn-ts-success btn-ts-sm"
+                                onclick="actionLead(<?php echo $lead['id']; ?>, 'approved', this)">Approve</button>
+                            <button type="button" class="btn-ts-danger btn-ts-sm"
+                                onclick="actionLead(<?php echo $lead['id']; ?>, 'rejected', this)">Reject</button>
                         </div>
                         <?php else: ?>
                         <span style="font-size:.8125rem;color:var(--text-muted);">Actioned</span>
@@ -117,5 +111,49 @@ $s_map = ['pending'=>'badge-open', 'approved'=>'badge-resolved', 'rejected'=>'ba
         </table>
     </div>
 </div>
+<script>
+function actionLead(id, status, btn) {
+    var label  = status === 'approved' ? 'approve' : 'reject';
+    var capLabel = status === 'approved' ? 'Approve' : 'Reject';
+
+    showConfirm(
+        capLabel + ' Lead?',
+        'Are you sure you want to ' + label + ' this lead? This action cannot be undone.',
+        function () {
+            var original = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '…';
+
+            var fd = new FormData();
+            fd.append('id', id);
+            fd.append('status', status);
+
+            fetch('../api/leads/update.php', { method: 'POST', body: fd })
+                .then(function (r) { return r.json(); })
+                .then(function (json) {
+                    btn.disabled = false;
+                    btn.innerHTML = original;
+                    if (json.success) {
+                        showSuccess(capLabel + 'd!', json.message, null);
+                        /* After modal closes, reload to reflect new status */
+                        var closeBtn = document.getElementById('tsModalCloseBtn');
+                        if (closeBtn) {
+                            closeBtn.addEventListener('click', function () {
+                                window.location.reload();
+                            }, { once: true });
+                        }
+                    } else {
+                        showError('Action Failed', json.message || 'Could not update lead status.');
+                    }
+                })
+                .catch(function () {
+                    btn.disabled = false;
+                    btn.innerHTML = original;
+                    showError('Connection Error', 'Could not reach the server. Please try again.');
+                });
+        }
+    );
+}
+</script>
 
 <?php require '../includes/footer.php'; ?>

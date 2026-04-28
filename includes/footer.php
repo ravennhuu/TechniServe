@@ -20,7 +20,22 @@
     </div><!-- /.ts-page -->
 </div><!-- /.ts-wrapper -->
 
+<!-- ── Global Feedback Modal ─────────────────────────────────────────── -->
+<div id="tsModalOverlay" class="ts-modal-overlay">
+    <div id="tsModal" class="ts-modal" role="dialog" aria-modal="true">
+        <div id="tsModalHeader" class="ts-modal-header">
+            <div id="tsModalIcon" class="ts-modal-icon"></div>
+        </div>
+        <div class="ts-modal-body">
+            <h4 id="tsModalTitle" class="ts-modal-title"></h4>
+            <p  id="tsModalMessage" class="ts-modal-message"></p>
+        </div>
+        <div id="tsModalFooter" class="ts-modal-footer"></div>
+    </div>
+</div>
+
 <script src="../public/js/bootstrap.bundle.min.js"></script>
 <script src="../public/js/main.js"></script>
 </body>
 </html>
+

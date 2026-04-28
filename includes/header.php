@@ -11,6 +11,7 @@
     <link rel="icon" href="../public/assets/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="../public/css/bootstrap.min.css">
     <link rel="stylesheet" href="../public/css/style.css">
+    <script src="../public/js/modal.js"></script>
 </head>
 <body>
 

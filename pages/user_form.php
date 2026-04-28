@@ -159,11 +159,39 @@ try {
 
 <script>
 function toggleClientField() {
-    var role = document.getElementById('userRole').value;
+    var role  = document.getElementById('userRole').value;
     var field = document.getElementById('clientField');
     field.style.display = (role === 'client') ? 'block' : 'none';
     document.getElementById('userClient').required = (role === 'client');
 }
+
+var isEditing = <?php echo $editing ? 'true' : 'false'; ?>;
+
+submitFormAjax('#userForm', {
+    successTitle:   isEditing ? 'User Updated!' : 'User Created!',
+    successMessage: isEditing
+        ? 'The user account has been updated successfully.'
+        : 'New user account has been created successfully.',
+    redirectUrl:    'users.php',
+    errorTitle:     'Could Not Save User',
+    validate: function(form) {
+        var pwd     = form.querySelector('#userPassword');
+        var confirm = form.querySelector('#userPasswordConfirm');
+        if (pwd && confirm && pwd.value && pwd.value !== confirm.value) {
+            showError('Password Mismatch', 'The passwords you entered do not match. Please try again.');
+            return false;
+        }
+        if (pwd && pwd.value && pwd.value.length < 8) {
+            showError('Password Too Short', 'Password must be at least 8 characters long.');
+            return false;
+        }
+        var role = form.querySelector('#userRole');
+        if (role && !role.value) {
+            showError('Role Required', 'Please select a role for this user.');
+            return false;
+        }
+    }
+});
 </script>
 
 <?php require '../includes/footer.php'; ?>

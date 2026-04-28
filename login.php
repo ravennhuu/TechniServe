@@ -126,18 +126,75 @@
 
 <script src="public/js/bootstrap.bundle.min.js"></script>
 <script>
-    document.getElementById('togglePwd').addEventListener('click', function() {
-        var pwdInput = document.getElementById('loginPassword');
-        var type = pwdInput.getAttribute('type') === 'password' ? 'text' : 'password';
-        pwdInput.setAttribute('type', type);
-        
-        // Toggle icon visually
-        if(type === 'text') {
-            this.innerHTML = '<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>';
-        } else {
-            this.innerHTML = '<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>';
-        }
-    });
+(function () {
+    /* Password visibility toggle */
+    var toggleBtn = document.getElementById('togglePwd');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function () {
+            var input = document.getElementById('loginPassword');
+            var isText = input.getAttribute('type') === 'text';
+            input.setAttribute('type', isText ? 'password' : 'text');
+            this.innerHTML = isText
+                ? '<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>'
+                : '<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>';
+        });
+    }
+
+    /* Login form AJAX */
+    var form    = document.getElementById('loginForm');
+    var errBox  = document.getElementById('loginError');
+    var loginBtn = document.getElementById('loginBtn');
+
+    function showErr(msg) {
+        if (!errBox) return;
+        errBox.textContent = msg;
+        errBox.style.display = 'block';
+        errBox.style.padding = '.75rem 1rem';
+        errBox.style.background = '#fee2e2';
+        errBox.style.color = '#991b1b';
+        errBox.style.border = '1px solid #fca5a5';
+        errBox.style.borderRadius = '8px';
+        errBox.style.fontSize = '.875rem';
+        errBox.style.marginBottom = '1rem';
+    }
+
+    function hideErr() {
+        if (!errBox) return;
+        errBox.textContent = '';
+        errBox.style.display = 'none';
+    }
+
+    if (form) {
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            hideErr();
+
+            var originalHtml = loginBtn ? loginBtn.innerHTML : 'Sign In';
+            if (loginBtn) {
+                loginBtn.disabled = true;
+                loginBtn.innerHTML = '<svg style="animation:ts-spin .7s linear infinite;display:inline-block;vertical-align:middle;margin-right:.3rem;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Signing in…';
+            }
+
+            fetch(form.action, { method: 'POST', body: new FormData(form) })
+                .then(function (r) { return r.json(); })
+                .then(function (json) {
+                    if (loginBtn) { loginBtn.disabled = false; loginBtn.innerHTML = originalHtml; }
+                    if (json.success) {
+                        window.location.href = json.redirect || 'pages/dashboard.php';
+                    } else {
+                        showErr(json.message || 'Invalid credentials. Please try again.');
+                    }
+                })
+                .catch(function () {
+                    if (loginBtn) { loginBtn.disabled = false; loginBtn.innerHTML = originalHtml; }
+                    showErr('Could not connect to the server. Please check your connection.');
+                });
+        });
+    }
+})();
 </script>
+<style>
+@keyframes ts-spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+</style>
 </body>
-</html>
+</html>

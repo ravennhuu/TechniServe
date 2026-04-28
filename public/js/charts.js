@@ -6,13 +6,14 @@ document.addEventListener('DOMContentLoaded', function () {
     /* ── Chart 1: Average Ticket Resolution Time ── */
     var ctx1 = document.getElementById('resolutionChart');
     if (ctx1) {
+        var resData = typeof dynamicChartResData !== 'undefined' ? dynamicChartResData : [0,0,0,0,0,0,0,0,0,0,0,0];
         new Chart(ctx1.getContext('2d'), {
             type: 'bar',
             data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
                 datasets: [{
                     label: 'Avg Resolution (hrs)',
-                    data: [5.2, 3.8, 6.1, 4.5, 3.2, 4.8],
+                    data: resData,
                     backgroundColor: 'rgba(19,64,116,.75)',
                     borderColor: '#134074',
                     borderWidth: 1,
@@ -47,19 +48,21 @@ document.addEventListener('DOMContentLoaded', function () {
     /* ── Chart 2: Peak Support Request Days ── */
     var ctx2 = document.getElementById('peakDaysChart');
     if (ctx2) {
+        var daysData = typeof dynamicChartDaysData !== 'undefined' ? dynamicChartDaysData : [0,0,0,0,0,0,0];
         new Chart(ctx2.getContext('2d'), {
             type: 'bar',
             data: {
                 labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
                 datasets: [{
                     label: 'Tickets Filed',
-                    data: [18, 22, 15, 20, 25, 8, 3],
+                    data: daysData,
                     backgroundColor: 'rgba(5,150,105,.72)',
                     borderColor: '#059669',
                     borderWidth: 1,
                     borderRadius: 5
                 }]
             },
+
             options: {
                 responsive: true,
                 plugins: {

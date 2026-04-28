@@ -3,6 +3,7 @@
 // Preventive maintenance log table.
 require '../includes/auth.php';
 require '../includes/db.php';
+require '../includes/functions.php';
 require '../includes/header.php';
 
 $is_client = (isset($_SESSION['role']) && $_SESSION['role'] === 'client');
@@ -129,41 +130,63 @@ $s_map = ['completed'=>'badge-resolved','scheduled'=>'badge-open','cancelled'=>'
 
 <div class="ts-card">
     <div class="ts-table-wrap">
-        <table class="ts-table" id="maintenanceTable">
+        <table class="ts-table" id="maintenanceTable" style="table-layout: auto;">
             <thead>
                 <tr>
-                    <th class="col-id">#</th>
-                    <th>Date</th>
-                    <th>Client</th>
-                    <th>Maintenance Type</th>
-                    <th>Technician</th>
+                    <th>Log Details</th>
+                    <th>Client / Technician</th>
+                    <th>Maintenance Scope</th>
                     <th>SLA Hours</th>
                     <th>Status</th>
+                    <th style="width:140px;">Action</th>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($logs as $log): ?>
                 <tr>
-                    <td class="col-id"><?php echo $log['id']; ?></td>
-                    <td style="font-size:.8125rem;white-space:nowrap;"><?php echo formatDate($log['created_at']); ?></td>
-                    <td class="text-muted-ts"><?php echo htmlspecialchars($log['client']); ?></td>
-                    <td><?php echo htmlspecialchars($log['title']); ?></td>
-                    <td class="text-muted-ts"><?php echo htmlspecialchars($log['technician']); ?></td>
+                    <td>
+                        <div style="font-weight:700; color:var(--navy-deepest);">#<?php echo $log['id']; ?></div>
+                        <div style="font-size:0.75rem; color:var(--text-muted); white-space:nowrap;"><?php echo date('M d, Y', strtotime($log['created_at'])); ?></div>
+                    </td>
+                    <td>
+                        <div style="font-weight:600; color:var(--text-primary);"><?php echo htmlspecialchars($log['client']); ?></div>
+                        <div style="font-size:0.75rem; color:var(--text-muted);">Tech: <?php echo htmlspecialchars($log['technician']); ?></div>
+                    </td>
+                    <td>
+                        <div style="font-weight:500;"><?php echo htmlspecialchars($log['title']); ?></div>
+                        <div style="font-size:0.75rem; color:var(--text-muted); text-transform:capitalize; margin-top: 2px;">
+                            <?php echo str_replace('_', ' ', $log['activity_type']); ?>
+                        </div>
+                    </td>
                     <td>
                         <div style="display:flex; flex-direction:column;">
                             <span style="font-weight:600; color:var(--navy-deepest);">
                                 <?php echo number_format($log['hours_spent'], 1) . 'h'; ?>
                             </span>
+                            <?php if ($log['status'] === 'completed'): ?>
                             <span style="font-size:0.65rem; color:#059669; font-weight:700; text-transform:uppercase; letter-spacing:0.02em;">
                                 <svg width="8" height="8" fill="currentColor" viewBox="0 0 20 20" style="margin-right:2px;"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
-                                Auto-Deducted
+                                Deducted
                             </span>
+                            <?php else: ?>
+                            <span style="font-size:0.65rem; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:0.02em;">
+                                Pending
+                            </span>
+                            <?php endif; ?>
                         </div>
                     </td>
                     <td>
                         <span class="ts-badge <?php echo $s_map[$log['status']] ?? 'badge-silver'; ?>">
                             <?php echo ucfirst($log['status']); ?>
                         </span>
+                    </td>
+                    <td>
+                        <div style="display:flex;gap:.375rem;">
+                            <a href="maintenance_view.php?id=<?php echo $log['id']; ?>" class="btn-ts-secondary btn-ts-sm">View</a>
+                            <?php if (!$is_client): ?>
+                            <a href="maintenance_edit.php?id=<?php echo $log['id']; ?>" class="btn-ts-secondary btn-ts-sm">Edit</a>
+                            <?php endif; ?>
+                        </div>
                     </td>
                 </tr>
                 <?php endforeach; ?>

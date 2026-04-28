@@ -19,13 +19,18 @@ if (!$id || !$status) {
 }
 
 try {
-    $stmt = $pdo->prepare("UPDATE leads SET status = ? WHERE id = ?");
-    $stmt->execute([$status, $id]);
+    $stmt = $pdo->prepare("
+        UPDATE leads
+        SET status = ?, reviewed_by = ?, reviewed_at = NOW()
+        WHERE id = ?
+    ");
+    $stmt->execute([$status, $_SESSION['user_id'], $id]);
 
     if ($stmt->rowCount() > 0) {
-        echo json_encode(['success' => true, 'message' => 'Lead status updated successfully.']);
+        $action = ucfirst($status);
+        echo json_encode(['success' => true, 'message' => "Lead has been {$action}d successfully."]);
     } else {
-        echo json_encode(['success' => false, 'message' => 'Lead not found or no changes made.']);
+        echo json_encode(['success' => false, 'message' => 'Lead not found or status is already set.']);
     }
 } catch (PDOException $e) {
     http_response_code(500);

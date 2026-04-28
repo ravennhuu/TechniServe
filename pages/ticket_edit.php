@@ -131,4 +131,20 @@ try {
     </div>
 </div>
 
+<script>
+submitFormAjax('#editTicketForm', {
+    successTitle:   'Ticket Updated!',
+    successMessage: 'The ticket status has been updated and the activity trail logged.',
+    redirectUrl:    'ticket_view.php?id=<?php echo $ticket['id']; ?>',
+    errorTitle:     'Update Failed',
+    validate: function(form) {
+        var note = form.querySelector('#clientUpdate');
+        if (note && !note.value.trim()) {
+            showError('Note Required', 'Please provide an update message before saving.');
+            return false;
+        }
+    }
+});
+</script>
+
 <?php require '../includes/footer.php'; ?>
