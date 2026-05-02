@@ -1,4 +1,4 @@
-﻿/* =====================================================
+/* =====================================================
    TechniServe â€” Portal CSS
    style.css  |  Pair A
    ===================================================== */
@@ -754,6 +754,12 @@ a:hover {
 
 .pwd-toggle:hover {
     color: var(--navy-action);
+}
+
+/* Hide native Edge/IE password reveal icon */
+input::-ms-reveal,
+input::-ms-clear {
+    display: none;
 }
 
 /* =====================================================

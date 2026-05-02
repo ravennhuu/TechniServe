@@ -1,8 +1,8 @@
 -- ================================================================
 -- TechniServe: IT Managed Services & SLA Portal
 -- ================================================================
--- FILE:    schema.sql
--- PURPOSE: Creates all 8 database tables.
+-- FILE:    schema_3nf.sql
+-- PURPOSE: Full 3NF-compliant version of schema.sql.
 --          Run this file FIRST in phpMyAdmin before seed.sql.
 -- DBA:     Pontañeles, Tito III P. & Sapida, Jake Andrei A.
 -- ================================================================
@@ -21,6 +21,44 @@
 --   4. Copy and paste everything below → click "Go"
 --   5. Then run seed.sql to insert test data
 -- ================================================================
+-- 3NF CHANGES SUMMARY (4 fixes applied):
+--
+--   FIX 1 — users.client_id REMOVED
+--     Was:  users had a client_id column pointing back to clients.
+--     Why:  Redundant. The link already exists via clients.user_id.
+--           Keeping both creates a circular bidirectional dependency.
+--     Now:  Removed from users. Look up a user's company via:
+--           SELECT * FROM clients WHERE user_id = <users.id>
+--
+--   FIX 2 — sla_contracts.hours_used / site_visits_used REMOVED
+--     Was:  Two mutable aggregate columns updated on every maintenance log.
+--     Why:  Derived data. Both are computable from maintenance_logs:
+--             hours_used       = SUM(hours_spent) WHERE client_id = ?
+--             site_visits_used = COUNT(*) WHERE activity_type = 'site_visit'
+--           Storing them here creates a transitive dependency on
+--           maintenance_logs data.
+--     Now:  Removed. Use the VIEW v_sla_usage (provided below) or
+--           run the aggregation query wherever the values are needed.
+--
+--   FIX 3 — maintenance_logs.client_id REMOVED
+--     Was:  maintenance_logs stored client_id directly.
+--     Why:  Redundant. client_id is already reachable via:
+--           maintenance_logs.ticket_id → tickets.client_id
+--           Storing it again is a transitive dependency.
+--     Now:  Removed. Join to tickets when the client is needed:
+--           JOIN tickets t ON t.id = maintenance_logs.ticket_id
+--
+--   FIX 4 — reports aggregate columns REMOVED; replaced with FK to source
+--     Was:  reports stored pre-calculated totals (total_tickets,
+--           resolved_tickets, compliance_pct, hours_used, etc.).
+--     Why:  All values are derivable from tickets and maintenance_logs.
+--           Storing them here creates transitive dependencies on live
+--           ticket/maintenance data.
+--     Now:  The reports table records *who* generated *which month's*
+--           report and *when*. The actual figures are always computed
+--           live via the v_monthly_report VIEW (provided below).
+--
+-- ================================================================
 
 CREATE DATABASE IF NOT EXISTS `techniServe`
   CHARACTER SET utf8mb4
@@ -34,10 +72,12 @@ USE `techniServe`;
 -- ================================================================
 -- Stores every person who can log in to the system.
 --
--- role = 'admin'  → The IT firm. Full access to everything.
---                   Manages tickets, logs maintenance, generates
---                   reports, onboards clients, manages all accounts.
+-- 3NF FIX 1: client_id column has been REMOVED.
+--   The link between a user and a client company is stored once,
+--   in clients.user_id. To find a user's company:
+--     SELECT * FROM clients WHERE user_id = <users.id>
 --
+-- role = 'admin'  → The IT firm. Full access to everything.
 -- role = 'client' → The corporate customer. Can only submit tickets,
 --                   view their own data, and view their own reports.
 --
@@ -47,10 +87,7 @@ USE `techniServe`;
 
 CREATE TABLE `users` (
   `id`            INT          NOT NULL AUTO_INCREMENT,
-  `client_id`     INT          NULL DEFAULT NULL,
-                                -- Only filled for client users.
-                                -- Points to clients.id for that user's company.
-                                -- Always NULL for admin users.
+  -- client_id REMOVED (3NF FIX 1): use clients.user_id to navigate instead.
 
   `name`          VARCHAR(100) NOT NULL,
   `email`         VARCHAR(150) NOT NULL,
@@ -80,6 +117,9 @@ CREATE TABLE `users` (
 -- One client company = one user account (linked via user_id).
 --
 -- Created by Admin during manual onboarding after lead approval.
+--
+-- 3NF NOTE: clients.user_id is the single source of truth for the
+--   user ↔ company relationship. No back-reference in users needed.
 -- ================================================================
 
 CREATE TABLE `clients` (
@@ -96,6 +136,8 @@ CREATE TABLE `clients` (
   `created_at`     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
   PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_client_user` (`user_id`),
+                                -- Enforces one-to-one: one user per company
 
   CONSTRAINT `fk_clients_user`
     FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)
@@ -104,26 +146,24 @@ CREATE TABLE `clients` (
 
 ) ENGINE=InnoDB;
 
--- Links users back to their company.
--- users.client_id = 1 means this user belongs to clients.id = 1.
--- Done with ALTER TABLE because clients did not exist yet when users was created.
-ALTER TABLE `users`
-  ADD CONSTRAINT `fk_users_client`
-    FOREIGN KEY (`client_id`) REFERENCES `clients`(`id`)
-    ON DELETE SET NULL;
-    -- If the company is deleted, the user still exists but client_id becomes NULL.
+-- NOTE: The ALTER TABLE that added fk_users_client (users.client_id → clients.id)
+-- has been removed as part of 3NF FIX 1. That back-reference no longer exists.
 
 
 -- ================================================================
 -- TABLE 3: sla_contracts
 -- ================================================================
--- Stores the Service Level Agreement terms for each client.
+-- Stores the Service Level Agreement *terms* for each client.
 -- Admin creates and manages these. One active contract per client.
 --
--- monthly_hours_pool   = total support hours the client gets per month
--- hours_used           = automatically updated when Admin logs maintenance
--- site_visits_included = free on-site visits per month
--- response_time_hrs    = how fast Admin must respond (SLA guarantee)
+-- 3NF FIX 2: hours_used and site_visits_used REMOVED.
+--   These were running totals derived from maintenance_logs.
+--   They are now computed on demand via the v_sla_usage VIEW below.
+--
+-- What remains here is purely definitional (the contract terms):
+--   monthly_hours_pool   = total support hours the client gets per month
+--   site_visits_included = free on-site visits per month
+--   response_time_hrs    = how fast Admin must respond (SLA guarantee)
 -- ================================================================
 
 CREATE TABLE `sla_contracts` (
@@ -131,9 +171,11 @@ CREATE TABLE `sla_contracts` (
   `client_id`            INT          NOT NULL,
 
   `monthly_hours_pool`   INT          NOT NULL DEFAULT 20,
-  `hours_used`           INT          NOT NULL DEFAULT 0,
+  -- hours_used REMOVED (3NF FIX 2): computed via v_sla_usage view.
+
   `site_visits_included` INT          NOT NULL DEFAULT 5,
-  `site_visits_used`     INT          NOT NULL DEFAULT 0,
+  -- site_visits_used REMOVED (3NF FIX 2): computed via v_sla_usage view.
+
   `response_time_hrs`    INT          NOT NULL DEFAULT 4,
                                 -- Admin must respond within this many hours (SLA limit)
   `resolution_time_hrs`  INT          NOT NULL DEFAULT 24,
@@ -166,6 +208,8 @@ CREATE TABLE `sla_contracts` (
 --                (Admin can also create on behalf of a client)
 --   Admin directly picks up and resolves tickets.
 --   There is NO assigned_to column — no technician exists to assign to.
+--
+-- 3NF NOTE: No changes needed. All columns depend solely on tickets.id.
 -- ================================================================
 
 CREATE TABLE `tickets` (
@@ -211,10 +255,7 @@ CREATE TABLE `tickets` (
 -- Every time Admin changes a ticket status, the app inserts
 -- a new row here automatically.
 --
--- Example rows:
---   action = 'Status changed to In Progress'
---   action = 'Status changed to Resolved'
---   action = 'Priority updated to Critical'
+-- 3NF NOTE: No changes needed. All columns depend solely on id.
 -- ================================================================
 
 CREATE TABLE `ticket_activities` (
@@ -241,20 +282,23 @@ CREATE TABLE `ticket_activities` (
 -- TABLE 6: maintenance_logs
 -- ================================================================
 -- Logs every maintenance activity performed by the Admin.
--- When Admin logs an activity, hours_spent is automatically
--- deducted from the client's SLA hours pool (Objective 4).
--- This is done by calling deductSLAHours() in functions.php.
---
 -- performed_by = always the Admin (only Admin can log maintenance)
+--
+-- 3NF FIX 3: client_id REMOVED.
+--   Was redundant — client_id was already reachable via:
+--     maintenance_logs.ticket_id → tickets.client_id
+--   To get the client for a maintenance log:
+--     JOIN tickets t ON t.id = maintenance_logs.ticket_id
+--   Then use t.client_id.
 -- ================================================================
 
 CREATE TABLE `maintenance_logs` (
   `id`            INT          NOT NULL AUTO_INCREMENT,
   `ticket_id`     INT          NOT NULL,
-                                -- Which ticket this maintenance resolves/addresses
-  `client_id`     INT          NOT NULL,
-                                -- Which client this work was done for
-                                -- Needed directly for fast SLA hour deduction
+                                -- Which ticket this maintenance resolves/addresses.
+                                -- The client is derived via tickets.client_id.
+  -- client_id REMOVED (3NF FIX 3): reachable via ticket_id → tickets.client_id
+
   `performed_by`  INT          NOT NULL,
                                 -- Which Admin performed the work (users.id, role='admin')
 
@@ -274,7 +318,7 @@ CREATE TABLE `maintenance_logs` (
 
   `hours_spent`   DECIMAL(5,2) NOT NULL DEFAULT 1.00,
                                 -- Hours used for this activity.
-                                -- This number is deducted from sla_contracts.hours_used.
+                                -- Aggregated by v_sla_usage to compute hours_used per client.
 
   `scheduled_at`  TIMESTAMP    NULL DEFAULT NULL,
   `completed_at`  TIMESTAMP    NULL DEFAULT NULL,
@@ -285,8 +329,7 @@ CREATE TABLE `maintenance_logs` (
 
   CONSTRAINT `fk_maint_ticket`
     FOREIGN KEY (`ticket_id`)    REFERENCES `tickets`(`id`)  ON DELETE CASCADE,
-  CONSTRAINT `fk_maint_client`
-    FOREIGN KEY (`client_id`)    REFERENCES `clients`(`id`)  ON DELETE CASCADE,
+  -- fk_maint_client REMOVED (3NF FIX 3)
   CONSTRAINT `fk_maint_performed_by`
     FOREIGN KEY (`performed_by`) REFERENCES `users`(`id`)    ON DELETE CASCADE
 
@@ -296,40 +339,36 @@ CREATE TABLE `maintenance_logs` (
 -- ================================================================
 -- TABLE 7: reports
 -- ================================================================
--- Stores generated monthly service reports.
--- Admin triggers report generation on-demand (no cron jobs on AwardSpace).
--- Numbers are pre-calculated and saved here for fast retrieval.
+-- Records *that* a monthly report was generated, by whom, and when.
 --
--- The UNIQUE KEY prevents generating a duplicate report for the
--- same client in the same month and year.
+-- 3NF FIX 4: All pre-calculated aggregate columns REMOVED:
+--   total_tickets, resolved_tickets, critical_count, high_count,
+--   low_count, sla_breaches, compliance_pct, avg_response_hrs,
+--   hours_used, site_visits_used.
+--
+--   These were all derived from tickets and maintenance_logs, making
+--   them transitive dependencies. They are now computed live via the
+--   v_monthly_report VIEW (see below).
+--
+-- What remains: the metadata of the report generation event itself.
+-- The UNIQUE KEY still enforces one report record per client per month.
 -- ================================================================
 
 CREATE TABLE `reports` (
-  `id`               INT          NOT NULL AUTO_INCREMENT,
-  `client_id`        INT          NOT NULL,
-  `generated_by`     INT          NOT NULL,
-                                   -- Which Admin generated this report
+  `id`           INT       NOT NULL AUTO_INCREMENT,
+  `client_id`    INT       NOT NULL,
+  `generated_by` INT       NOT NULL,
+                            -- Which Admin generated this report
 
-  `month`            TINYINT      NOT NULL,    -- 1 = January ... 12 = December
-  `year`             SMALLINT     NOT NULL,    -- e.g. 2026
+  `month`        TINYINT   NOT NULL,   -- 1 = January ... 12 = December
+  `year`         SMALLINT  NOT NULL,   -- e.g. 2026
 
-  `total_tickets`    INT          NOT NULL DEFAULT 0,
-  `resolved_tickets` INT          NOT NULL DEFAULT 0,
-  `critical_count`   INT          NOT NULL DEFAULT 0,
-  `high_count`       INT          NOT NULL DEFAULT 0,
-  `low_count`        INT          NOT NULL DEFAULT 0,
-  `sla_breaches`     INT          NOT NULL DEFAULT 0,
-                                   -- Tickets that exceeded response_time_hrs
-  `compliance_pct`   DECIMAL(5,2) NOT NULL DEFAULT 0.00,
-                                   -- resolved_tickets / total_tickets * 100
-  `avg_response_hrs` DECIMAL(5,2) NOT NULL DEFAULT 0.00,
-  `hours_used`       INT          NOT NULL DEFAULT 0,
-  `site_visits_used` INT          NOT NULL DEFAULT 0,
-  `generated_at`     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  -- Aggregate columns REMOVED (3NF FIX 4): use v_monthly_report VIEW instead.
+  `generated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_report_per_month` (`client_id`, `month`, `year`),
-                                   -- One report per client per month only
+                            -- One report record per client per month only
 
   CONSTRAINT `fk_reports_client`
     FOREIGN KEY (`client_id`)    REFERENCES `clients`(`id`) ON DELETE CASCADE,
@@ -350,6 +389,8 @@ CREATE TABLE `reports` (
 -- using pages/user_form.php and assigns an SLA contract.
 --
 -- status flow: pending → approved OR rejected
+--
+-- 3NF NOTE: No changes needed. All columns depend solely on leads.id.
 -- ================================================================
 
 CREATE TABLE `leads` (
@@ -377,6 +418,107 @@ CREATE TABLE `leads` (
 
 
 -- ================================================================
+-- VIEWS — Replaces the removed derived/aggregate columns
+-- ================================================================
+
+
+-- ----------------------------------------------------------------
+-- VIEW: v_sla_usage
+-- ----------------------------------------------------------------
+-- Replaces sla_contracts.hours_used and site_visits_used (FIX 2),
+-- and uses the normalized maintenance_logs (no client_id, FIX 3).
+--
+-- Returns per-client SLA consumption figures by joining
+-- maintenance_logs → tickets to derive the client.
+--
+-- Usage:
+--   SELECT * FROM v_sla_usage WHERE client_id = 1;
+-- ----------------------------------------------------------------
+
+CREATE OR REPLACE VIEW `v_sla_usage` AS
+SELECT
+  t.client_id,
+  sc.id                                          AS contract_id,
+  sc.monthly_hours_pool,
+  COALESCE(SUM(ml.hours_spent), 0)               AS hours_used,
+  sc.monthly_hours_pool
+    - COALESCE(SUM(ml.hours_spent), 0)           AS hours_remaining,
+  sc.site_visits_included,
+  COUNT(CASE WHEN ml.activity_type = 'site_visit'
+             AND ml.status = 'completed'
+             THEN 1 END)                         AS site_visits_used
+FROM `sla_contracts` sc
+JOIN `clients`       c  ON c.id         = sc.client_id
+JOIN `tickets`       t  ON t.client_id  = c.id
+LEFT JOIN `maintenance_logs` ml ON ml.ticket_id = t.id
+WHERE sc.is_active = 1
+GROUP BY t.client_id, sc.id, sc.monthly_hours_pool, sc.site_visits_included;
+
+
+-- ----------------------------------------------------------------
+-- VIEW: v_monthly_report
+-- ----------------------------------------------------------------
+-- Replaces all aggregate columns removed from reports (FIX 4).
+--
+-- Computes the full monthly SLA report figures on demand,
+-- joined to reports so the admin's generation record is preserved.
+--
+-- Usage (for a specific client + month):
+--   SELECT * FROM v_monthly_report
+--   WHERE client_id = 1 AND month = 4 AND year = 2026;
+-- ----------------------------------------------------------------
+
+CREATE OR REPLACE VIEW `v_monthly_report` AS
+SELECT
+  r.id                                                              AS report_id,
+  r.client_id,
+  c.company_name,
+  r.month,
+  r.year,
+  r.generated_by,
+  r.generated_at,
+
+  COUNT(t.id)                                                       AS total_tickets,
+  SUM(CASE WHEN t.status = 'resolved'   THEN 1 ELSE 0 END)         AS resolved_tickets,
+  SUM(CASE WHEN t.priority = 'critical' THEN 1 ELSE 0 END)         AS critical_count,
+  SUM(CASE WHEN t.priority = 'high'     THEN 1 ELSE 0 END)         AS high_count,
+  SUM(CASE WHEN t.priority = 'low'      THEN 1 ELSE 0 END)         AS low_count,
+
+  SUM(CASE
+    WHEN t.status = 'resolved'
+     AND TIMESTAMPDIFF(HOUR, t.created_at, t.resolved_at) > sc.response_time_hrs
+    THEN 1 ELSE 0
+  END)                                                              AS sla_breaches,
+
+  ROUND(
+    SUM(CASE WHEN t.status = 'resolved' THEN 1 ELSE 0 END)
+    / NULLIF(COUNT(t.id), 0) * 100, 2
+  )                                                                 AS compliance_pct,
+
+  ROUND(
+    AVG(TIMESTAMPDIFF(HOUR, t.created_at, t.resolved_at)), 2
+  )                                                                 AS avg_response_hrs,
+
+  COALESCE(SUM(ml.hours_spent), 0)                                  AS hours_used,
+
+  COUNT(CASE WHEN ml.activity_type = 'site_visit'
+             AND ml.status = 'completed'
+             THEN 1 END)                                            AS site_visits_used
+
+FROM `reports` r
+JOIN `clients`       c  ON c.id         = r.client_id
+JOIN `tickets`       t  ON t.client_id  = c.id
+                        AND MONTH(t.created_at) = r.month
+                        AND YEAR(t.created_at)  = r.year
+JOIN `sla_contracts` sc ON sc.client_id = c.id AND sc.is_active = 1
+LEFT JOIN `maintenance_logs` ml ON ml.ticket_id = t.id
+
+GROUP BY
+  r.id, r.client_id, c.company_name, r.month, r.year,
+  r.generated_by, r.generated_at, sc.response_time_hrs;
+
+
+-- ================================================================
 -- SEED CREDENTIALS (from seed.sql)
 -- ================================================================
 -- Role    | Email                    | Password
@@ -388,72 +530,14 @@ CREATE TABLE `leads` (
 
 
 -- ================================================================
--- REPORT QUERIES FOR api/reports/generate.php
--- Written by DBA (Tito & Jake) — used by Leader (Raven)
--- ================================================================
-
--- Query 1: Monthly SLA compliance report per client
--- Params: ? = month (1–12), ? = year (e.g. 2026)
-/*
-SELECT
-  c.company_name,
-  COUNT(t.id)                                                   AS total_tickets,
-  SUM(CASE WHEN t.status = 'resolved'   THEN 1 ELSE 0 END)     AS resolved_tickets,
-  SUM(CASE WHEN t.priority = 'critical' THEN 1 ELSE 0 END)     AS critical_count,
-  SUM(CASE WHEN t.priority = 'high'     THEN 1 ELSE 0 END)     AS high_count,
-  SUM(CASE WHEN t.priority = 'low'      THEN 1 ELSE 0 END)     AS low_count,
-  sc.monthly_hours_pool,
-  sc.hours_used,
-  (sc.monthly_hours_pool - sc.hours_used)                       AS remaining_hours,
-  sc.site_visits_included,
-  sc.site_visits_used,
-  ROUND(
-    SUM(CASE WHEN t.status = 'resolved' THEN 1 ELSE 0 END)
-    / NULLIF(COUNT(t.id), 0) * 100, 2
-  )                                                             AS compliance_pct,
-  ROUND(
-    AVG(TIMESTAMPDIFF(HOUR, t.created_at, t.resolved_at)), 2
-  )                                                             AS avg_response_hrs
-FROM tickets t
-JOIN clients c        ON t.client_id  = c.id
-JOIN sla_contracts sc ON sc.client_id = c.id AND sc.is_active = 1
-WHERE MONTH(t.created_at) = ? AND YEAR(t.created_at) = ?
-GROUP BY c.id, c.company_name, sc.monthly_hours_pool,
-         sc.hours_used, sc.site_visits_included, sc.site_visits_used;
-*/
-
--- Query 2: Peak ticket submission days — for charts.js (Objective 7)
-/*
-SELECT
-  DAYNAME(created_at) AS day_name,
-  COUNT(*)            AS ticket_count
-FROM tickets
-GROUP BY DAYNAME(created_at)
-ORDER BY FIELD(DAYNAME(created_at),
-  'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday');
-*/
-
--- Query 3: Average resolution time per month — for charts.js (Objective 7)
-/*
-SELECT
-  YEAR(created_at)  AS yr,
-  MONTH(created_at) AS mo,
-  ROUND(AVG(TIMESTAMPDIFF(HOUR, created_at, resolved_at)), 2) AS avg_hrs
-FROM tickets
-WHERE status = 'resolved' AND resolved_at IS NOT NULL
-GROUP BY YEAR(created_at), MONTH(created_at)
-ORDER BY yr, mo;
-*/
-
-
--- ================================================================
--- seed.sql content (copy separately into phpMyAdmin after schema)
+-- UPDATED SEED DATA (3NF-compliant, no client_id in users INSERT)
 -- ================================================================
 /*
 USE `techniServe`;
 
 -- Users: 1 admin, 2 clients. Password for all = "password123"
 -- Hash: $2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi
+-- NOTE: No client_id column here — link is established via clients.user_id.
 
 INSERT INTO `users` (`name`, `email`, `password_hash`, `role`) VALUES
   ('Raven Alamo',   'admin@techniServe.ph', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin'),
@@ -464,13 +548,12 @@ INSERT INTO `clients` (`user_id`, `company_name`, `address`, `contact_person`, `
   (2, 'Acme Corporation',  'Makati City, Metro Manila', 'Juan dela Cruz', 'client@acmecorp.ph',  '09171234567'),
   (3, 'BPI Office Manila', 'BGC, Taguig City',          'Maria Santos',   'client@bpioffice.ph', '09281234567');
 
-UPDATE `users` SET `client_id` = 1 WHERE `id` = 2;
-UPDATE `users` SET `client_id` = 2 WHERE `id` = 3;
+-- No UPDATE users SET client_id needed — that column no longer exists.
 
 INSERT INTO `sla_contracts`
-  (`client_id`,`monthly_hours_pool`,`hours_used`,`site_visits_included`,`site_visits_used`,`response_time_hrs`,`resolution_time_hrs`,`start_date`,`end_date`) VALUES
-  (1, 20,  6, 5, 1, 4,  24, '2026-01-01', '2026-12-31'),
-  (2, 40, 12, 8, 2, 2,  12, '2026-01-01', '2026-12-31');
+  (`client_id`,`monthly_hours_pool`,`site_visits_included`,`response_time_hrs`,`resolution_time_hrs`,`start_date`,`end_date`) VALUES
+  (1, 20, 5, 4,  24, '2026-01-01', '2026-12-31'),
+  (2, 40, 8, 2,  12, '2026-01-01', '2026-12-31');
 
 INSERT INTO `tickets` (`client_id`,`created_by`,`subject`,`description`,`priority`,`status`,`resolved_at`) VALUES
   (1, 2, 'Network switch failure on Floor 3',   'Main switch unresponsive.',          'critical', 'resolved',    NOW()),
@@ -485,11 +568,12 @@ INSERT INTO `ticket_activities` (`ticket_id`,`user_id`,`action`,`note`) VALUES
   (3, 1, 'Status changed to Resolved',    'Reinstalled printer driver.'),
   (4, 1, 'Status changed to In Progress', 'Investigating email server logs.');
 
+-- NOTE: client_id removed from maintenance_logs INSERT — use ticket_id only.
 INSERT INTO `maintenance_logs`
-  (`ticket_id`,`client_id`,`performed_by`,`title`,`activity_type`,`hours_spent`,`completed_at`,`status`) VALUES
-  (1, 1, 1, 'Network switch replacement',    'hardware_repair', 3.00, NOW(), 'completed'),
-  (3, 2, 1, 'Printer driver reinstallation', 'remote_support',  1.50, NOW(), 'completed'),
-  (4, 2, 1, 'Email server performance audit','network_audit',   2.50, NULL,  'in_progress');
+  (`ticket_id`,`performed_by`,`title`,`activity_type`,`hours_spent`,`completed_at`,`status`) VALUES
+  (1, 1, 'Network switch replacement',    'hardware_repair', 3.00, NOW(), 'completed'),
+  (3, 1, 'Printer driver reinstallation', 'remote_support',  1.50, NOW(), 'completed'),
+  (4, 1, 'Email server performance audit','network_audit',   2.50, NULL,  'in_progress');
 
 INSERT INTO `leads` (`company_name`,`contact_person`,`email`,`phone`,`preferred_plan`,`message`,`status`) VALUES
   ('Globe BPO Services', 'Pedro Reyes', 'it@globebpo.ph', '09391234567', 'Professional', 'Need managed IT for 3 floors.', 'pending'),
