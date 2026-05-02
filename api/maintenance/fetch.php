@@ -9,9 +9,9 @@ try {
         $stmt = $pdo->prepare("
             SELECT m.*, c.company_name, t.subject as ticket_subject
             FROM maintenance_logs m
-            JOIN clients c ON m.client_id = c.id
             JOIN tickets t ON m.ticket_id = t.id
-            WHERE m.client_id = ?
+            JOIN clients c ON t.client_id = c.id
+            WHERE t.client_id = ?
             ORDER BY m.created_at DESC
         ");
         $stmt->execute([$_SESSION['client_id']]);
@@ -19,8 +19,8 @@ try {
         $stmt = $pdo->prepare("
             SELECT m.*, c.company_name, t.subject as ticket_subject
             FROM maintenance_logs m
-            JOIN clients c ON m.client_id = c.id
             JOIN tickets t ON m.ticket_id = t.id
+            JOIN clients c ON t.client_id = c.id
             ORDER BY m.created_at DESC
         ");
         $stmt->execute();

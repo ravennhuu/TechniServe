@@ -1,7 +1,163 @@
 <?php
-// ticket_create.php — Form to open a new support ticket
+// ticket_create.php — Pair A
+// Create new support ticket form.
 require '../includes/auth.php';
+require '../includes/db.php';
 require '../includes/header.php';
+
+// Fetch real clients for admin dropdown
+$clients = [];
+if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
+    try {
+        $stmt = $pdo->prepare("SELECT id, company_name FROM clients ORDER BY company_name ASC");
+        $stmt->execute();
+        $clients = $stmt->fetchAll();
+    } catch (PDOException $e) {
+        $clients = [];
+    }
+}
 ?>
-<!-- Page content goes here -->
+
+<nav style="font-size:.8125rem;color:var(--text-muted);margin-bottom:1.25rem;">
+    <a href="tickets.php" class="text-navy">Tickets</a>
+    <span style="margin:0 .4rem;">/</span>
+    <span>New Ticket</span>
+</nav>
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Create New Ticket</h1>
+        <p class="page-subtitle">Fill in the details below to open a new support ticket.</p>
+    </div>
+    <a href="tickets.php" class="btn-ts-secondary">← Cancel</a>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="ts-card">
+            <div class="ts-card-header"><h5 class="ts-card-title">Ticket Information</h5></div>
+            <div class="ts-card-body">
+                <form action="../api/tickets/create.php" method="POST" id="createTicketForm">
+
+                    <div class="ts-form-group">
+                        <label class="ts-form-label" for="ticketSubject">
+                            Subject <span class="required-star">*</span>
+                        </label>
+                        <input type="text" id="ticketSubject" name="subject"
+                            class="ts-form-control" placeholder="Brief description of the issue" required>
+                    </div>
+
+                    <div class="ts-form-group">
+                        <label class="ts-form-label" for="ticketDescription">
+                            Description <span class="required-star">*</span>
+                        </label>
+                        <textarea id="ticketDescription" name="description"
+                            class="ts-form-control" rows="5"
+                            placeholder="Describe the issue in detail — what happened, when it started, and what has been tried…" required></textarea>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <div class="ts-form-group">
+                                <label class="ts-form-label" for="ticketPriority">
+                                    Priority <span class="required-star">*</span>
+                                </label>
+                                <select id="ticketPriority" name="priority" class="ts-form-control ts-form-select" required>
+                                    <option value="">— Select —</option>
+                                    <option value="critical">🔴 Critical</option>
+                                    <option value="high">🟠 High</option>
+                                    <option value="low">🟢 Low</option>
+                                </select>
+                            </div>
+                        </div>
+                        <?php if (isset($_SESSION['role']) && in_array($_SESSION['role'], ['admin', 'technician'])): ?>
+                        <div class="col-sm-6">
+                            <div class="ts-form-group">
+                                <label class="ts-form-label" for="ticketClient">
+                                    Client <span class="required-star">*</span>
+                                </label>
+                                <select id="ticketClient" name="client_id" class="ts-form-control ts-form-select" required>
+                                    <option value="">— Select Client —</option>
+                                    <?php foreach ($clients as $c): ?>
+                                    <option value="<?php echo $c['id']; ?>"><?php echo htmlspecialchars($c['company_name']); ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <div class="ts-form-group">
+                                <label class="ts-form-label" for="ticketCategory">Category</label>
+                                <select id="ticketCategory" name="category" class="ts-form-control ts-form-select">
+                                    <option value="">— Select —</option>
+                                    <option value="network">Network</option>
+                                    <option value="hardware">Hardware</option>
+                                    <option value="software">Software</option>
+                                    <option value="email">Email / Communication</option>
+                                    <option value="security">Security</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div style="display:flex;gap:.75rem;justify-content:flex-end;">
+                        <a href="tickets.php" class="btn-ts-secondary">Cancel</a>
+                        <button type="submit" class="btn-ts-primary" id="submitTicketBtn">
+                            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                            Create Ticket
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tips -->
+    <div class="col-lg-4">
+        <div class="ts-card">
+            <div class="ts-card-header"><h5 class="ts-card-title">Priority Guide</h5></div>
+            <div class="ts-card-body">
+                <ul style="list-style:none;padding:0;margin:0;font-size:.875rem;">
+                    <li style="padding:.5rem 0;border-bottom:1px solid var(--border-color);">
+                        <span class="ts-badge badge-critical" style="margin-bottom:.25rem;">Critical</span>
+                        <div style="color:var(--text-muted);font-size:.8125rem;margin-top:.25rem;">Total outage affecting business operations. Response SLA: 1 hour.</div>
+                    </li>
+                    <li style="padding:.5rem 0;border-bottom:1px solid var(--border-color);">
+                        <span class="ts-badge badge-high" style="margin-bottom:.25rem;">High</span>
+                        <div style="color:var(--text-muted);font-size:.8125rem;margin-top:.25rem;">Significant impact on a team or department. Response SLA: 4 hours.</div>
+                    </li>
+
+                    <li style="padding:.5rem 0;">
+                        <span class="ts-badge badge-low" style="margin-bottom:.25rem;">Low</span>
+                        <div style="color:var(--text-muted);font-size:.8125rem;margin-top:.25rem;">Minor issue or request. Response SLA: Next business day.</div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+submitFormAjax('#createTicketForm', {
+    successTitle:   'Ticket Created!',
+    successMessage: 'Your support ticket has been submitted successfully.',
+    redirectUrl:    'tickets.php',
+    errorTitle:     'Could Not Create Ticket',
+    validate: function(form) {
+        var priority = form.querySelector('#ticketPriority');
+        if (priority && !priority.value) {
+            showError('Missing Information', 'Please select a priority level before submitting.');
+            return false;
+        }
+    }
+});
+</script>
+
 <?php require '../includes/footer.php'; ?>
