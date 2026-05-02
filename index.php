@@ -9,7 +9,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="TechniServe — Enterprise IT Managed Services backed by a formal Service Level Agreement. Reduce downtime, track every ticket, and stay SLA-compliant.">
     <title>TechniServe — Enterprise IT Support &amp; SLA Portal</title>
-    <link rel="icon" href="public/assets/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="public/assets/images/TechniServeLogo2.png" type="image/png">
     <link rel="stylesheet" href="public/css/bootstrap.min.css">
     <link rel="stylesheet" href="public/css/landing.css">
 </head>
@@ -18,9 +18,13 @@
 <!-- =====================================================
      SECTION 1 — STICKY NAVBAR
      ===================================================== -->
-<nav class="lp-navbar scrolled" id="lpNavbar" role="navigation" aria-label="Main navigation">
-    <a href="index.php" class="nav-brand" style="display:flex;align-items:center;text-decoration:none;">
-        <img src="public/assets/images/TechniServeLogo.png" alt="TechniServe" style="width: 300px; height: auto; display:block;">
+<style>
+    .lp-navbar #navLogo { opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease; }
+    .lp-navbar.scrolled #navLogo { opacity: 1; visibility: visible; }
+</style>
+<nav class="lp-navbar" id="lpNavbar" role="navigation" aria-label="Main navigation">
+    <a href="index.php" class="nav-brand" style="display:flex;align-items:center;text-decoration:none; overflow: hidden; height: 50px;">
+        <img src="public/assets/images/TechniServeLogo1.png" alt="TechniServe" id="navLogo" style="width: 250px; height: auto; display:block; transform: scale(1.2);">
     </a>
 
     <ul class="lp-nav-links" id="navLinks">
@@ -46,12 +50,9 @@
 
         <!-- Left: text -->
         <div class="hero-left">
-            <p class="hero-eyebrow-plain">ENTERPRISE IT MANAGEMENT</p>
-
-            <h1 class="hero-title">
-                Managed IT Services.<br>
-                Guaranteed by SLA.
-            </h1>
+            <div style="margin-bottom: 1.5rem; margin-left: 50px; height: 200px; display: flex; align-items: center; justify-content: center; width: 500px; pointer-events: none;">
+                <img src="public/assets/images/TechniServeLogo.png" alt="TechniServe" style="width: 100%; height: auto; display:block; transform: scale(2.0); transform-origin: center;">
+            </div>
 
             <p class="hero-sub">
                 Reduce downtime, track every ticket, and know your SLA compliance — in real time.

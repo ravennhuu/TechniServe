@@ -9,7 +9,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="TechniServe Client Portal Login — secure access for authorised clients, technicians, and administrators.">
     <title>Login — TechniServe Portal</title>
-    <link rel="icon" href="public/assets/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="public/assets/images/TechniServeLogo2.png" type="image/png">
     <link rel="stylesheet" href="public/css/bootstrap.min.css">
     <link rel="stylesheet" href="public/css/style.css">
 </head>
