@@ -40,10 +40,6 @@ try {
     $stmt->execute([$user_id, $company_name, $address, $contact_person, $contact_email, $contact_phone]);
     $clientId = $pdo->lastInsertId();
 
-    // Update the user to link back to the client
-    $stmt = $pdo->prepare("UPDATE users SET client_id = ? WHERE id = ?");
-    $stmt->execute([$clientId, $user_id]);
-
     $pdo->commit();
     echo json_encode(['success' => true, 'message' => 'Client profile and user account created successfully.', 'id' => $clientId]);
 } catch (PDOException $e) {

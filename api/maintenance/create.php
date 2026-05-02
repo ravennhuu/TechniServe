@@ -13,15 +13,14 @@ if ($_SESSION['role'] !== 'admin') {
 }
 
 $ticket_id     = $_POST['ticket_id']     ?? null;
-$client_id     = $_POST['client_id']     ?? null;
 $title         = trim($_POST['title']    ?? '');
 $description   = trim($_POST['description'] ?? '');
 $activity_type = $_POST['activity_type'] ?? 'other';
 $hours_spent   = $_POST['hours_spent']   ?? 0;
 $status        = $_POST['status']        ?? 'scheduled';
 
-if (!$ticket_id || !$client_id || !$title) {
-    echo json_encode(['success' => false, 'message' => 'Ticket ID, Client ID, and Title are required.']);
+if (!$ticket_id || !$title) {
+    echo json_encode(['success' => false, 'message' => 'Ticket ID and Title are required.']);
     exit();
 }
 
@@ -29,15 +28,14 @@ try {
     $pdo->beginTransaction();
 
     $stmt = $pdo->prepare("
-        INSERT INTO maintenance_logs (ticket_id, client_id, performed_by, title, description, activity_type, hours_spent, status, completed_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO maintenance_logs (ticket_id, performed_by, title, description, activity_type, hours_spent, status, completed_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     ");
     
     $completed_at = ($status === 'completed') ? date('Y-m-d H:i:s') : null;
 
     $stmt->execute([
         $ticket_id,
-        $client_id,
         $_SESSION['user_id'],
         $title,
         $description,
@@ -46,16 +44,6 @@ try {
         $status,
         $completed_at
     ]);
-
-    // Deduct SLA hours if completed
-    if ($status === 'completed') {
-        if ($hours_spent > 0) {
-            deductSLAHours($pdo, $client_id, $hours_spent);
-        }
-        if ($activity_type === 'site_visit') {
-            deductSLAVisit($pdo, $client_id);
-        }
-    }
 
     $pdo->commit();
     echo json_encode(['success' => true, 'message' => 'Maintenance log created successfully.']);

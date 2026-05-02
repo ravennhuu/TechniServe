@@ -17,7 +17,6 @@ $email     = trim($_POST['email']     ?? '');
 $password  = trim($_POST['password']  ?? '');
 $role      = trim($_POST['role']      ?? '');
 $is_active = isset($_POST['is_active']) ? (int)$_POST['is_active'] : 1;
-$client_id = isset($_POST['client_id']) && $_POST['client_id'] !== '' ? (int)$_POST['client_id'] : null;
 
 if (!$name || !$email || !$password || !$role) {
     echo json_encode(['success' => false, 'message' => 'Name, email, password, and role are all required.']);
@@ -48,29 +47,20 @@ try {
         exit();
     }
 
-    // If client role and client_id given, verify the client exists
-    if ($role === 'client' && $client_id) {
-        $stmt = $pdo->prepare("SELECT id FROM clients WHERE id = ?");
-        $stmt->execute([$client_id]);
-        if (!$stmt->fetch()) {
-            echo json_encode(['success' => false, 'message' => 'Selected client account does not exist.']);
-            exit();
-        }
-    }
+    // If client role, no extra validation needed — link is via clients.user_id (3NF FIX 1)
 
     $hashed = hashPassword($password);
 
     $stmt = $pdo->prepare("
-        INSERT INTO users (name, email, password_hash, role, is_active, client_id)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO users (name, email, password_hash, role, is_active)
+        VALUES (?, ?, ?, ?, ?)
     ");
     $stmt->execute([
         $name,
         $email,
         $hashed,
         $role,
-        $is_active,
-        ($role === 'client' ? $client_id : null)
+        $is_active
     ]);
 
     echo json_encode(['success' => true, 'message' => 'User account created successfully.']);

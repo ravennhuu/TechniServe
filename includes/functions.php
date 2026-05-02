@@ -5,27 +5,10 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-/**
- * Deducts hours from a client's SLA pool.
- * Called every time a maintenance log is created (Objective 4).
- */
-function deductSLAHours($pdo, $client_id, $hours) {
-    $stmt = $pdo->prepare(
-        "UPDATE sla_contracts
-         SET hours_used = hours_used + ?
-         WHERE client_id = ? AND is_active = 1"
-    );
-    $stmt->execute([$hours, $client_id]);
-}
-
-function deductSLAVisit($pdo, $client_id) {
-    $stmt = $pdo->prepare(
-        "UPDATE sla_contracts
-         SET site_visits_used = site_visits_used + 1
-         WHERE client_id = ? AND is_active = 1"
-    );
-    $stmt->execute([$client_id]);
-}
+// 3NF FIX 2: deductSLAHours() and deductSLAVisit() have been REMOVED.
+// sla_contracts.hours_used and site_visits_used no longer exist as stored columns.
+// SLA usage is now computed on demand via the v_sla_usage VIEW:
+//   SELECT * FROM v_sla_usage WHERE client_id = ?
 
 /**
  * Calculates SLA compliance percentage.

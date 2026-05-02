@@ -21,7 +21,6 @@ $email     = trim($_POST['email']     ?? '');
 $password  = trim($_POST['password']  ?? '');
 $role      = trim($_POST['role']      ?? '');
 $is_active = isset($_POST['is_active']) ? (int)$_POST['is_active'] : null;
-$client_id = isset($_POST['client_id']) && $_POST['client_id'] !== '' ? (int)$_POST['client_id'] : null;
 
 if (!$name || !$email) {
     echo json_encode(['success' => false, 'message' => 'Name and email are required.']);
@@ -67,13 +66,7 @@ try {
             $updates[] = "is_active = ?";
             $params[]  = $is_active;
         }
-        // client_id: set if role is client, clear if role is admin
-        if ($role === 'client' && $client_id) {
-            $updates[] = "client_id = ?";
-            $params[]  = $client_id;
-        } elseif ($role === 'admin') {
-            $updates[] = "client_id = NULL";
-        }
+        // 3NF FIX 1: users.client_id removed — link is managed via clients.user_id
     }
 
     $params[] = $id;

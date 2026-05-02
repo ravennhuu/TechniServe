@@ -24,11 +24,20 @@ try {
     // Check if user exists AND password matches
     if ($user && password_verify($password, $user['password_hash'])) {
         // Save user info in session
-        $_SESSION['user_id']   = $user['id'];
-        $_SESSION['role']      = $user['role'];
-        $_SESSION['name']      = $user['name'];
-        $_SESSION['email']     = $user['email'];
-        $_SESSION['client_id'] = $user['client_id'];
+        $_SESSION['user_id'] = $user['id'];
+        $_SESSION['role']    = $user['role'];
+        $_SESSION['name']    = $user['name'];
+        $_SESSION['email']   = $user['email'];
+
+        // 3NF FIX 1: users.client_id removed. Derive client_id via clients.user_id.
+        if ($user['role'] === 'client') {
+            $cstmt = $pdo->prepare("SELECT id FROM clients WHERE user_id = ?");
+            $cstmt->execute([$user['id']]);
+            $client = $cstmt->fetch();
+            $_SESSION['client_id'] = $client ? $client['id'] : null;
+        } else {
+            $_SESSION['client_id'] = null;
+        }
 
         echo json_encode(['success' => true, 'redirect' => 'pages/dashboard.php']);
         exit();

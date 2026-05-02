@@ -8,11 +8,11 @@ try {
     if ($_SESSION['role'] === 'admin') {
         $id = $_GET['id'] ?? null;
         if ($id) {
-            $stmt = $pdo->prepare("SELECT id, client_id, name, email, role, is_active, created_at FROM users WHERE id = ?");
+            $stmt = $pdo->prepare("SELECT id, name, email, role, is_active, created_at FROM users WHERE id = ?");
             $stmt->execute([$id]);
             $data = $stmt->fetch();
         } else {
-            $stmt = $pdo->prepare("SELECT id, client_id, name, email, role, is_active, created_at FROM users ORDER BY name ASC");
+            $stmt = $pdo->prepare("SELECT id, name, email, role, is_active, created_at FROM users ORDER BY name ASC");
             $stmt->execute();
             $data = $stmt->fetchAll();
         }
