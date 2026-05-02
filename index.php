@@ -19,13 +19,8 @@
      SECTION 1 — STICKY NAVBAR
      ===================================================== -->
 <nav class="lp-navbar scrolled" id="lpNavbar" role="navigation" aria-label="Main navigation">
-    <a href="index.php" class="nav-brand" style="display:flex;align-items:center;gap:.625rem;text-decoration:none;">
-        <!-- Grid icon -->
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8DA9C4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-            <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
-        </svg>
-        <span>TechniServe</span>
+    <a href="index.php" class="nav-brand" style="display:flex;align-items:center;text-decoration:none;">
+        <img src="public/assets/images/TechniServeLogo.png" alt="TechniServe" style="width: 300px; height: auto; display:block;">
     </a>
 
     <ul class="lp-nav-links" id="navLinks">

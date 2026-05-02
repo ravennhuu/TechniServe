@@ -23,10 +23,9 @@
     <!-- ── Sidebar ── -->
     <aside class="ts-sidebar" id="tsSidebar">
 
-        <div class="sidebar-brand">
-            <a href="dashboard.php" class="brand-link">
-                <img src="../public/assets/logo-white.png" alt="TechniServe" onerror="this.style.display='none'">
-                TechniServe
+        <div class="sidebar-brand" style="padding: 0.5rem 1rem;">
+            <a href="dashboard.php" class="brand-link" style="display:flex; justify-content:center; align-items: center; overflow: hidden; height: 60px; width: 100%;">
+                <img src="../public/assets/images/TechniServeLogo.png" alt="TechniServe" style="width: 80%; height: auto; display:block; transform: scale(2.2);">
             </a>
         </div>
 
