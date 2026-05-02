@@ -15,61 +15,26 @@ $month = $_POST['month'] ?? date('n');
 $year  = $_POST['year']  ?? date('Y');
 
 try {
-    // This query calculates stats for ALL clients for the given period
-    $sql = "
-        SELECT 
-            c.id as client_id,
-            COUNT(t.id) as total_tickets,
-            SUM(CASE WHEN t.status = 'resolved' OR t.status = 'closed' THEN 1 ELSE 0 END) as resolved_tickets,
-            SUM(CASE WHEN t.priority = 'critical' THEN 1 ELSE 0 END) as critical_count,
-            SUM(CASE WHEN t.priority = 'high' THEN 1 ELSE 0 END) as high_count,
-            SUM(CASE WHEN t.priority = 'low' THEN 1 ELSE 0 END) as low_count,
-            AVG(TIMESTAMPDIFF(HOUR, t.created_at, t.resolved_at)) as avg_response_hrs,
-            sc.hours_used,
-            sc.site_visits_used
-        FROM clients c
-        LEFT JOIN tickets t ON c.id = t.client_id AND MONTH(t.created_at) = ? AND YEAR(t.created_at) = ?
-        LEFT JOIN sla_contracts sc ON c.id = sc.client_id AND sc.is_active = 1
-        GROUP BY c.id
-    ";
+    // Fetch all active clients for the given period
+    $stmt = $pdo->prepare("SELECT id FROM clients");
+    $stmt->execute();
+    $clients = $stmt->fetchAll();
 
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute([$month, $year]);
-    $stats = $stmt->fetchAll();
-
-    foreach ($stats as $row) {
-        $compliance = calcCompliance($row['resolved_tickets'], $row['total_tickets']);
-        
-        // Insert or update report
+    foreach ($clients as $row) {
+        // 3NF FIX 4: reports only stores metadata (who generated, which month).
+        // All aggregate figures are computed live via v_monthly_report VIEW.
         $stmt = $pdo->prepare("
-            INSERT INTO reports (client_id, generated_by, month, year, total_tickets, resolved_tickets, critical_count, high_count, low_count, compliance_pct, avg_response_hrs, hours_used, site_visits_used)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE 
-                total_tickets = VALUES(total_tickets),
-                resolved_tickets = VALUES(resolved_tickets),
-                critical_count = VALUES(critical_count),
-                high_count = VALUES(high_count),
-                low_count = VALUES(low_count),
-                compliance_pct = VALUES(compliance_pct),
-                avg_response_hrs = VALUES(avg_response_hrs),
-                hours_used = VALUES(hours_used),
-                site_visits_used = VALUES(site_visits_used)
+            INSERT INTO reports (client_id, generated_by, month, year)
+            VALUES (?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+                generated_by = VALUES(generated_by),
+                generated_at = CURRENT_TIMESTAMP
         ");
-        
         $stmt->execute([
-            $row['client_id'],
+            $row['id'],
             $_SESSION['user_id'],
             $month,
-            $year,
-            $row['total_tickets'],
-            $row['resolved_tickets'],
-            $row['critical_count'],
-            $row['high_count'],
-            $row['low_count'],
-            $compliance,
-            $row['avg_response_hrs'] ?? 0,
-            $row['hours_used'] ?? 0,
-            $row['site_visits_used'] ?? 0
+            $year
         ]);
     }
 

@@ -5,41 +5,63 @@ require_once '../../includes/db.php';
 require_once '../../includes/functions.php';
 header('Content-Type: application/json');
 
+// Only admin can edit maintenance
 if ($_SESSION['role'] !== 'admin') {
     http_response_code(403);
     echo json_encode(['success' => false, 'message' => 'Unauthorized.']);
     exit();
 }
 
-$id     = $_POST['id']     ?? null;
-$status = $_POST['status'] ?? null;
+$id            = $_POST['id']            ?? null;
+$ticket_id     = $_POST['ticket_id']     ?? null;
+$title         = trim($_POST['title']    ?? '');
+$description   = trim($_POST['description'] ?? '');
+$activity_type = $_POST['activity_type'] ?? 'other';
+$hours_spent   = $_POST['hours_spent']   ?? 0;
+$status        = $_POST['status']        ?? 'scheduled';
 
-if (!$id || !$status) {
-    echo json_encode(['success' => false, 'message' => 'ID and Status are required.']);
+if (!$id || !$ticket_id || !$title) {
+    echo json_encode(['success' => false, 'message' => 'Log ID, Ticket ID, and Title are required.']);
     exit();
 }
 
 try {
     $pdo->beginTransaction();
 
-    // Get current status and hours to check if we should deduct now
-    $stmt = $pdo->prepare("SELECT status, hours_spent, client_id FROM maintenance_logs WHERE id = ?");
+    // Fetch the old log to calculate SLA diffs
+    $stmt = $pdo->prepare("SELECT * FROM maintenance_logs WHERE id = ?");
     $stmt->execute([$id]);
-    $current = $stmt->fetch();
+    $old_log = $stmt->fetch();
 
-    if (!$current) {
-        echo json_encode(['success' => false, 'message' => 'Log not found.']);
+    if (!$old_log) {
+        $pdo->rollBack();
+        echo json_encode(['success' => false, 'message' => 'Maintenance log not found.']);
         exit();
     }
 
-    $stmt = $pdo->prepare("UPDATE maintenance_logs SET status = ?, completed_at = ? WHERE id = ?");
-    $completed_at = ($status === 'completed') ? date('Y-m-d H:i:s') : null;
-    $stmt->execute([$status, $completed_at, $id]);
-
-    // If newly completed, deduct hours
-    if ($current['status'] !== 'completed' && $status === 'completed' && $current['hours_spent'] > 0) {
-        deductSLAHours($pdo, $current['client_id'], $current['hours_spent']);
+    $completed_at = $old_log['completed_at'];
+    if ($old_log['status'] !== 'completed' && $status === 'completed') {
+        $completed_at = date('Y-m-d H:i:s');
+    } elseif ($status !== 'completed') {
+        $completed_at = null;
     }
+
+    $stmt = $pdo->prepare("
+        UPDATE maintenance_logs 
+        SET ticket_id = ?, title = ?, description = ?, activity_type = ?, hours_spent = ?, status = ?, completed_at = ?
+        WHERE id = ?
+    ");
+    
+    $stmt->execute([
+        $ticket_id,
+        $title,
+        $description,
+        $activity_type,
+        $hours_spent,
+        $status,
+        $completed_at,
+        $id
+    ]);
 
     $pdo->commit();
     echo json_encode(['success' => true, 'message' => 'Maintenance log updated successfully.']);

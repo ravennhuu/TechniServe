@@ -4,10 +4,10 @@ require_once '../../includes/db.php';
 header('Content-Type: application/json');
 
 $company  = trim($_POST['company_name']   ?? '');
-$contact  = trim($_POST['contact_person'] ?? '');
+$contact  = trim($_POST['contact_name']   ?? '');
 $email    = trim($_POST['email']          ?? '');
 $phone    = trim($_POST['phone']          ?? '');
-$plan     = trim($_POST['preferred_plan'] ?? '');
+$plan     = trim($_POST['sla_plan']       ?? '');
 $message  = trim($_POST['message']        ?? '');
 
 if (!$company || !$contact || !$email) {
