@@ -9,7 +9,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="TechniServe Client Portal Login — secure access for authorised clients, technicians, and administrators.">
     <title>Login — TechniServe Portal</title>
-    <link rel="icon" href="public/assets/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="public/assets/images/TechniServeLogo2.png" type="image/png">
     <link rel="stylesheet" href="public/css/bootstrap.min.css">
     <link rel="stylesheet" href="public/css/style.css">
 </head>
@@ -22,16 +22,9 @@
         <div class="col-lg-6 d-flex align-items-center justify-content-center p-4 p-md-5 text-white" style="background-color: var(--navy-deepest);">
             <div style="max-width: 440px; width: 100%;">
                 
-                <div class="d-flex align-items-center gap-2 mb-4 fs-3 fw-bold">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                        <line x1="3" y1="9" x2="21" y2="9"></line>
-                        <line x1="3" y1="15" x2="21" y2="15"></line>
-                    </svg>
-                    TechniServe
+                <div class="mb-4" style="margin-left: -20px; overflow: hidden; height: 120px; display: flex; align-items: center; justify-content: flex-start; width: 380px;">
+                    <img src="public/assets/images/TechniServeLogo.png" alt="TechniServe" style="width: 100%; height: auto; display:block; transform: scale(1.8); transform-origin: center;">
                 </div>
-                
-                <div class="mb-5" style="font-size: 0.9375rem; color: var(--steel-blue);">IT Managed Services & SLA Portal</div>
                 
                 <ul class="list-unstyled mb-0">
                     <li class="d-flex gap-3 mb-4">
@@ -197,4 +190,4 @@
 @keyframes ts-spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
 </style>
 </body>
-</html>
+</html>
