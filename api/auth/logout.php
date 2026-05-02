@@ -1,7 +1,8 @@
 <?php
-// Pair B
-// logout.php — Destroys session and returns status
+// api/auth/logout.php
 session_start();
-require '../../includes/auth.php';
-require '../../includes/db.php';
+session_unset();
+session_destroy();
 header('Content-Type: application/json');
+echo json_encode(['success' => true, 'message' => 'Logged out successfully.']);
+exit();

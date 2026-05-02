@@ -1,7 +1,7 @@
 <?php
-// Pair B
-// logout.php — kills session and redirects to index.php
+// logout.php
 session_start();
+session_unset();
 session_destroy();
-header('Location: index.php');
+header('Location: login.php');
 exit();
