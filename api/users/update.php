@@ -61,6 +61,18 @@ try {
         if ($role && in_array($role, ['admin', 'client'])) {
             $updates[] = "role = ?";
             $params[]  = $role;
+
+            // If changing role to client, ensure a client profile exists
+            if ($role === 'client') {
+                $cstmt = $pdo->prepare("SELECT id FROM clients WHERE user_id = ?");
+                $cstmt->execute([$id]);
+                if (!$cstmt->fetch()) {
+                    $cstmt_insert = $pdo->prepare(
+                        "INSERT INTO clients (user_id, company_name, contact_person, contact_email) VALUES (?, ?, ?, ?)"
+                    );
+                    $cstmt_insert->execute([$id, $name . "'s Company", $name, $email]);
+                }
+            }
         }
         if ($is_active !== null) {
             $updates[] = "is_active = ?";

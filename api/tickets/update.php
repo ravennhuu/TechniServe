@@ -17,10 +17,23 @@ if (!$id) {
 try {
     // Check ownership if client
     if ($_SESSION['role'] === 'client') {
+        $client_id = $_SESSION['client_id'] ?? null;
+        
+        // Fallback for missing client_id in session
+        if (!$client_id) {
+            $cstmt = $pdo->prepare("SELECT id FROM clients WHERE user_id = ?");
+            $cstmt->execute([$_SESSION['user_id']]);
+            $client = $cstmt->fetch();
+            if ($client) {
+                $client_id = $client['id'];
+                $_SESSION['client_id'] = $client_id;
+            }
+        }
+
         $stmt = $pdo->prepare("SELECT client_id FROM tickets WHERE id = ?");
         $stmt->execute([$id]);
         $t = $stmt->fetch();
-        if (!$t || $t['client_id'] !== $_SESSION['client_id']) {
+        if (!$t || $t['client_id'] !== $client_id) {
             echo json_encode(['success' => false, 'message' => 'Unauthorized.']);
             exit();
         }

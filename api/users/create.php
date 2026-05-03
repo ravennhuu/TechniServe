@@ -63,7 +63,31 @@ try {
         $is_active
     ]);
 
-    echo json_encode(['success' => true, 'message' => 'User account created successfully.']);
+    $userId = $pdo->lastInsertId();
+
+    // If role is client, create a corresponding placeholder client profile to ensure data integrity
+    if ($role === 'client') {
+        $cstmt = $pdo->prepare("
+            INSERT INTO clients (user_id, company_name, contact_person, contact_email) 
+            VALUES (?, ?, ?, ?)
+        ");
+        // Use user's name as placeholder for company and contact
+        $cstmt->execute([$userId, $name . "'s Company", $name, $email]);
+    }
+
+    echo json_encode([
+        'success' => true, 
+        'message' => 'User account created successfully.',
+        'data' => [
+            'id'        => $userId,
+            'name'      => $name,
+            'email'     => $email,
+            'role'      => $role,
+            'is_active' => $is_active,
+            'created_at'=> date('Y-m-d H:i:s'),
+            'company_name' => 'N/A'
+        ]
+    ]);
 } catch (PDOException $e) {
     http_response_code(500);
     echo json_encode(['success' => false, 'message' => 'Failed to create user account. Please try again.']);

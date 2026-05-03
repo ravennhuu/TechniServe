@@ -8,17 +8,32 @@ try {
     if ($_SESSION['role'] === 'admin') {
         $id = $_GET['id'] ?? null;
         if ($id) {
-            $stmt = $pdo->prepare("SELECT id, name, email, role, is_active, created_at FROM users WHERE id = ?");
+            $stmt = $pdo->prepare("
+                SELECT u.id, u.name, u.email, u.role, u.is_active, u.created_at, COALESCE(c.company_name, 'N/A') AS company_name 
+                FROM users u 
+                LEFT JOIN clients c ON c.user_id = u.id 
+                WHERE u.id = ?
+            ");
             $stmt->execute([$id]);
             $data = $stmt->fetch();
         } else {
-            $stmt = $pdo->prepare("SELECT id, name, email, role, is_active, created_at FROM users ORDER BY name ASC");
+            $stmt = $pdo->prepare("
+                SELECT u.id, u.name, u.email, u.role, u.is_active, u.created_at, COALESCE(c.company_name, 'N/A') AS company_name 
+                FROM users u 
+                LEFT JOIN clients c ON c.user_id = u.id 
+                ORDER BY u.created_at DESC
+            ");
             $stmt->execute();
             $data = $stmt->fetchAll();
         }
     } else {
         // Users can only fetch their own profile info
-        $stmt = $pdo->prepare("SELECT id, client_id, name, email, role, is_active, created_at FROM users WHERE id = ?");
+        $stmt = $pdo->prepare("
+            SELECT u.id, c.id AS client_id, u.name, u.email, u.role, u.is_active, u.created_at, COALESCE(c.company_name, 'N/A') AS company_name 
+            FROM users u 
+            LEFT JOIN clients c ON c.user_id = u.id 
+            WHERE u.id = ?
+        ");
         $stmt->execute([$_SESSION['user_id']]);
         $data = $stmt->fetch();
     }

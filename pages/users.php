@@ -17,7 +17,7 @@ try {
                CASE WHEN u.is_active = 1 THEN 'active' ELSE 'inactive' END as status,
                u.created_at as last_login -- Placeholder: schema lacks last_login, using created_at
         FROM users u
-        LEFT JOIN clients c ON u.client_id = c.id
+        LEFT JOIN clients c ON c.user_id = u.id
         ORDER BY u.name ASC
     ");
     $stmt->execute();
@@ -96,7 +96,10 @@ $s_map = ['active'=>'badge-resolved','inactive'=>'badge-closed'];
                     <td style="font-size:.8125rem;color:var(--text-muted);white-space:nowrap;"><?php echo $u['last_login']; ?></td>
                     <td><span class="ts-badge <?php echo $s_map[$u['status']] ?? 'badge-silver'; ?>"><?php echo ucfirst($u['status']); ?></span></td>
                     <td>
-                        <a href="user_form.php?id=<?php echo $u['id']; ?>" class="btn-ts-secondary btn-ts-sm">Edit</a>
+                        <div style="display:flex; gap:0.25rem;">
+                            <a href="user_form.php?id=<?php echo $u['id']; ?>" class="btn-ts-secondary btn-ts-sm">Edit</a>
+                            <button type="button" class="btn-ts-primary btn-ts-sm" style="background-color: #dc3545; border-color: #dc3545;" onclick="deleteUser(<?php echo $u['id']; ?>)">Delete</button>
+                        </div>
                     </td>
                 </tr>
                 <?php endforeach; ?>
@@ -120,6 +123,31 @@ function filterUsers() {
         var matchS  = !s || sBadge === s;
         row.style.display = (matchQ && matchR && matchS) ? '' : 'none';
     });
+}
+
+function deleteUser(id) {
+    window.showConfirm(
+        'Delete User', 
+        'Are you sure you want to permanently delete this user? This will also remove any linked data.', 
+        function() {
+            var formData = new FormData();
+            formData.append('id', id);
+
+            fetch('../api/users/delete.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    window.showSuccess('Deleted!', data.message, 'users.php', 1500);
+                } else {
+                    window.showError('Action Failed', data.message);
+                }
+            })
+            .catch(function(err) { console.error(err); });
+        }
+    );
 }
 </script>
 
