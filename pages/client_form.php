@@ -26,9 +26,8 @@ try {
         }
     } else {
         // Fetch users with role 'client' who don't have a client profile yet
-        // OR users who are already linked but maybe we want to allow re-assignment?
-        // Let's stick to unassigned client users.
-        $stmt = $pdo->prepare("SELECT id, name FROM users WHERE role = 'client' AND client_id IS NULL AND is_active = 1");
+        // 3NF FIX 1: users.client_id removed. Use LEFT JOIN to find unassigned users.
+        $stmt = $pdo->prepare("SELECT u.id, u.name FROM users u LEFT JOIN clients c ON u.id = c.user_id WHERE u.role = 'client' AND c.id IS NULL AND u.is_active = 1");
         $stmt->execute();
         $unassigned_users = $stmt->fetchAll();
     }
