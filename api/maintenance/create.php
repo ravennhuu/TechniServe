@@ -18,6 +18,7 @@ $description   = trim($_POST['description'] ?? '');
 $activity_type = $_POST['activity_type'] ?? 'other';
 $hours_spent   = $_POST['hours_spent']   ?? 0;
 $status        = $_POST['status']        ?? 'scheduled';
+$performed_by  = $_POST['performed_by']  ?? $_SESSION['user_id'];
 
 if (!$ticket_id || !$title) {
     echo json_encode(['success' => false, 'message' => 'Ticket ID and Title are required.']);
@@ -36,7 +37,7 @@ try {
 
     $stmt->execute([
         $ticket_id,
-        $_SESSION['user_id'],
+        $performed_by,
         $title,
         $description,
         $activity_type,

@@ -16,9 +16,10 @@ try {
         $stmt = $pdo->prepare("
             SELECT m.*, c.company_name as client, u.name as technician
             FROM maintenance_logs m
-            JOIN clients c ON m.client_id = c.id
+            JOIN tickets t ON m.ticket_id = t.id
+            JOIN clients c ON t.client_id = c.id
             JOIN users u ON m.performed_by = u.id
-            WHERE m.client_id = ?
+            WHERE t.client_id = ?
             ORDER BY m.created_at DESC
         ");
         $stmt->execute([$client_id]);
@@ -35,7 +36,8 @@ try {
         $stmt = $pdo->prepare("
             SELECT m.*, c.company_name as client, u.name as technician
             FROM maintenance_logs m
-            JOIN clients c ON m.client_id = c.id
+            JOIN tickets t ON m.ticket_id = t.id
+            JOIN clients c ON t.client_id = c.id
             JOIN users u ON m.performed_by = u.id
             ORDER BY m.created_at DESC
         ");

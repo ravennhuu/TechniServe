@@ -27,6 +27,15 @@ if ($_SESSION['role'] === 'client') {
         if ($client) {
             $client_id = $client['id'];
             $_SESSION['client_id'] = $client_id;
+        } else {
+            // Self-heal: auto-create the missing client profile
+            $name = $_SESSION['name'] ?? 'Client';
+            $cstmt_insert = $pdo->prepare(
+                "INSERT INTO clients (user_id, company_name, contact_person, contact_email) VALUES (?, ?, ?, ?)"
+            );
+            $cstmt_insert->execute([$_SESSION['user_id'], $name . "'s Company", $name, '']);
+            $client_id = $pdo->lastInsertId();
+            $_SESSION['client_id'] = $client_id;
         }
     }
 }
