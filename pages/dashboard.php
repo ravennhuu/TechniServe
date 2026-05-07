@@ -27,7 +27,7 @@ try {
         $new_today = $stmt->fetchColumn();
 
         // Simple SLA compliance for admin: average of all reports
-        $stmt = $pdo->prepare("SELECT AVG(compliance_pct) FROM reports");
+        $stmt = $pdo->prepare("SELECT AVG(compliance_pct) FROM v_monthly_report");
         $stmt->execute();
         $sla_compliance = round($stmt->fetchColumn() ?? 100, 1) . '%';
 
@@ -53,7 +53,8 @@ try {
         $stmt = $pdo->prepare("
             SELECT m.*, c.company_name as client, u.name as technician
             FROM maintenance_logs m
-            JOIN clients c ON m.client_id = c.id
+            JOIN tickets t ON m.ticket_id = t.id
+            JOIN clients c ON t.client_id = c.id
             JOIN users u ON m.performed_by = u.id
             WHERE m.status = 'scheduled'
             ORDER BY m.scheduled_at ASC LIMIT 5
@@ -81,7 +82,7 @@ try {
         $new_today = $stmt->fetchColumn();
 
         // SLA Pool
-        $stmt = $pdo->prepare("SELECT monthly_hours_pool, hours_used FROM v_sla_usage WHERE client_id = ?");
+        $stmt = $pdo->prepare("SELECT monthly_hours_pool, hours_used, hours_remaining FROM v_sla_usage WHERE client_id = ?");
         $stmt->execute([$client_id]);
         $sla = $stmt->fetch();
         $sla_pool = $sla['hours_remaining'] ?? 0;
@@ -111,9 +112,10 @@ try {
         $stmt = $pdo->prepare("
             SELECT m.*, c.company_name as client, u.name as technician
             FROM maintenance_logs m
-            JOIN clients c ON m.client_id = c.id
+            JOIN tickets t ON m.ticket_id = t.id
+            JOIN clients c ON t.client_id = c.id
             JOIN users u ON m.performed_by = u.id
-            WHERE m.client_id = ? AND m.status = 'scheduled'
+            WHERE t.client_id = ? AND m.status = 'scheduled'
             ORDER BY m.scheduled_at ASC LIMIT 5
         ");
         $stmt->execute([$client_id]);
@@ -270,7 +272,7 @@ try {
                             <div class="activity-text" style="font-weight:600;"><?php echo htmlspecialchars($m['title']); ?></div>
                             <div class="activity-meta">
                                 <?php echo htmlspecialchars($m['client']); ?> &middot;
-                                <?php echo formatDate($m['scheduled_at']); ?> &middot;
+                                <?php echo $m['scheduled_at'] ? formatDate($m['scheduled_at']) : 'Not Scheduled'; ?> &middot;
                                 <?php echo htmlspecialchars($m['technician']); ?>
                             </div>
                         </div>

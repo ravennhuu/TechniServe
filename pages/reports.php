@@ -8,23 +8,22 @@ require '../includes/header.php';
 try {
     if ($_SESSION['role'] === 'admin') {
         // Overall stats for admin
-        $stmt = $pdo->prepare("SELECT AVG(compliance_pct) FROM reports");
+        $stmt = $pdo->prepare("SELECT AVG(compliance_pct) FROM v_monthly_report");
         $stmt->execute();
         $overall_compliance = round($stmt->fetchColumn() ?? 100, 1) . '%';
 
-        $stmt = $pdo->prepare("SELECT AVG(avg_response_hrs) FROM reports");
+        $stmt = $pdo->prepare("SELECT AVG(avg_response_hrs) FROM v_monthly_report");
         $stmt->execute();
         $avg_resolution = round($stmt->fetchColumn() ?? 0, 1) . 'h';
 
-        $stmt = $pdo->prepare("SELECT SUM(total_tickets) FROM reports");
+        $stmt = $pdo->prepare("SELECT SUM(total_tickets) FROM v_monthly_report");
         $stmt->execute();
         $total_tickets = $stmt->fetchColumn() ?? 0;
 
         $stmt = $pdo->prepare("
-            SELECT r.*, c.company_name
-            FROM reports r
-            JOIN clients c ON r.client_id = c.id
-            ORDER BY r.year DESC, r.month DESC
+            SELECT *
+            FROM v_monthly_report
+            ORDER BY year DESC, month DESC
         ");
         $stmt->execute();
         $history = $stmt->fetchAll();
@@ -33,7 +32,7 @@ try {
         $stmt = $pdo->prepare("
             SELECT MONTH(resolved_at) as m, AVG(TIMESTAMPDIFF(HOUR, created_at, resolved_at)) as avg_hrs
             FROM tickets 
-            WHERE status = 'resolved' AND YEAR(resolved_at) = YEAR(CURDATE())
+            WHERE resolved_at IS NOT NULL AND YEAR(resolved_at) = YEAR(CURDATE())
             GROUP BY MONTH(resolved_at)
         ");
         $stmt->execute();
@@ -53,25 +52,24 @@ try {
         // Client specific stats
         $client_id = $_SESSION['client_id'];
         
-        $stmt = $pdo->prepare("SELECT AVG(compliance_pct) FROM reports WHERE client_id = ?");
+        $stmt = $pdo->prepare("SELECT AVG(compliance_pct) FROM v_monthly_report WHERE client_id = ?");
         $stmt->execute([$client_id]);
         $overall_compliance = round($stmt->fetchColumn() ?? 100, 1) . '%';
 
-        $stmt = $pdo->prepare("SELECT AVG(avg_response_hrs) FROM reports WHERE client_id = ?");
+        $stmt = $pdo->prepare("SELECT AVG(avg_response_hrs) FROM v_monthly_report WHERE client_id = ?");
         $stmt->execute([$client_id]);
         $avg_resolution = round($stmt->fetchColumn() ?? 0, 1) . 'h';
 
-        $stmt = $pdo->prepare("SELECT SUM(total_tickets) FROM reports WHERE client_id = ?");
+        $stmt = $pdo->prepare("SELECT SUM(total_tickets) FROM v_monthly_report WHERE client_id = ?");
         $stmt->execute([$client_id]);
         $total_tickets = $stmt->fetchColumn() ?? 0;
 
         // History
         $stmt = $pdo->prepare("
-            SELECT r.*, c.company_name
-            FROM reports r
-            JOIN clients c ON r.client_id = c.id
-            WHERE r.client_id = ?
-            ORDER BY r.year DESC, r.month DESC
+            SELECT *
+            FROM v_monthly_report
+            WHERE client_id = ?
+            ORDER BY year DESC, month DESC
         ");
         $stmt->execute([$client_id]);
         $history = $stmt->fetchAll();
@@ -80,7 +78,7 @@ try {
         $stmt = $pdo->prepare("
             SELECT MONTH(resolved_at) as m, AVG(TIMESTAMPDIFF(HOUR, created_at, resolved_at)) as avg_hrs
             FROM tickets 
-            WHERE status = 'resolved' AND YEAR(resolved_at) = YEAR(CURDATE()) AND client_id = ?
+            WHERE resolved_at IS NOT NULL AND YEAR(resolved_at) = YEAR(CURDATE()) AND client_id = ?
             GROUP BY MONTH(resolved_at)
         ");
         $stmt->execute([$client_id]);
@@ -364,4 +362,3 @@ function runGenerate() {
 </script>
 
 <?php require '../includes/footer.php'; ?>
-
