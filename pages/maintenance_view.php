@@ -15,11 +15,11 @@ if (!$log_id) {
 try {
     // Fetch Maintenance Log with Client, Technician, and Ticket info
     $stmt = $pdo->prepare("
-        SELECT m.*, c.company_name as client, u.name as technician, t.subject as ticket_subject
+        SELECT m.*, t.client_id, c.company_name as client, u.name as technician, t.subject as ticket_subject
         FROM maintenance_logs m
-        JOIN clients c ON m.client_id = c.id
-        JOIN users u ON m.performed_by = u.id
         JOIN tickets t ON m.ticket_id = t.id
+        JOIN clients c ON t.client_id = c.id
+        JOIN users u ON m.performed_by = u.id
         WHERE m.id = ?
     ");
     $stmt->execute([$log_id]);

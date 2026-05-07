@@ -81,10 +81,10 @@ try {
         $new_today = $stmt->fetchColumn();
 
         // SLA Pool
-        $stmt = $pdo->prepare("SELECT monthly_hours_pool, hours_used FROM sla_contracts WHERE client_id = ? AND is_active = 1");
+        $stmt = $pdo->prepare("SELECT monthly_hours_pool, hours_used FROM v_sla_usage WHERE client_id = ?");
         $stmt->execute([$client_id]);
         $sla = $stmt->fetch();
-        $sla_pool = ($sla['monthly_hours_pool'] ?? 0) - ($sla['hours_used'] ?? 0);
+        $sla_pool = $sla['hours_remaining'] ?? 0;
         $sla_total = $sla['monthly_hours_pool'] ?? 0;
 
         $kpi = [

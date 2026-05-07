@@ -10,7 +10,16 @@ $is_client = (isset($_SESSION['role']) && $_SESSION['role'] === 'client');
 
 try {
     if ($is_client) {
-        $client_id = $_SESSION['client_id'];
+        $client_id = $_SESSION['client_id'] ?? null;
+        if (!$client_id) {
+            $cstmt = $pdo->prepare("SELECT id FROM clients WHERE user_id = ?");
+            $cstmt->execute([$_SESSION['user_id']]);
+            $client = $cstmt->fetch();
+            if ($client) {
+                $client_id = $client['id'];
+                $_SESSION['client_id'] = $client_id;
+            }
+        }
         
         // Logs for this client
         $stmt = $pdo->prepare("
@@ -26,11 +35,11 @@ try {
         $logs = $stmt->fetchAll();
 
         // SLA Pool Status
-        $stmt = $pdo->prepare("SELECT monthly_hours_pool as total, hours_used as used FROM sla_contracts WHERE client_id = ? AND is_active = 1");
+        $stmt = $pdo->prepare("SELECT monthly_hours_pool, hours_used, hours_remaining FROM v_sla_usage WHERE client_id = ?");
         $stmt->execute([$client_id]);
         $pool = $stmt->fetch();
-        $pool_total = $pool['total'] ?? 0;
-        $pool_used = $pool['used'] ?? 0;
+        $pool_total = $pool['monthly_hours_pool'] ?? 0;
+        $pool_used = $pool['hours_used'] ?? 0;
     } else {
         // All logs for admin
         $stmt = $pdo->prepare("
@@ -45,7 +54,7 @@ try {
         $logs = $stmt->fetchAll();
 
         // Combined SLA Pool Status for Admin view
-        $stmt = $pdo->prepare("SELECT SUM(monthly_hours_pool) as total, SUM(hours_used) as used FROM sla_contracts WHERE is_active = 1");
+        $stmt = $pdo->prepare("SELECT SUM(monthly_hours_pool) as total, SUM(hours_used) as used FROM v_sla_usage");
         $stmt->execute();
         $pool = $stmt->fetch();
         $pool_total = $pool['total'] ?? 0;
@@ -187,6 +196,9 @@ $s_map = ['completed'=>'badge-resolved','scheduled'=>'badge-open','cancelled'=>'
                             <a href="maintenance_view.php?id=<?php echo $log['id']; ?>" class="btn-ts-secondary btn-ts-sm">View</a>
                             <?php if (!$is_client): ?>
                             <a href="maintenance_edit.php?id=<?php echo $log['id']; ?>" class="btn-ts-secondary btn-ts-sm">Edit</a>
+                            <button type="button" class="btn-ts-secondary btn-ts-sm maintenance-delete-btn" data-id="<?php echo $log['id']; ?>">
+                                Delete
+                            </button>
                             <?php endif; ?>
                         </div>
                     </td>

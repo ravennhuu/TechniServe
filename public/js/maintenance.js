@@ -24,4 +24,30 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (search) search.addEventListener('input',  filterTable);
     if (status) status.addEventListener('change', filterTable);
+
+    var deleteButtons = document.querySelectorAll('.maintenance-delete-btn');
+    deleteButtons.forEach(function (button) {
+        button.addEventListener('click', function () {
+            var logId = this.getAttribute('data-id');
+            if (!logId) return;
+
+            showConfirm('Delete Maintenance Log?', 'This action cannot be undone. Are you sure you want to delete this maintenance log?', function () {
+                fetch('../api/maintenance/delete.php', {
+                    method: 'POST',
+                    body: new URLSearchParams({ id: logId })
+                })
+                .then(function (res) { return res.json(); })
+                .then(function (json) {
+                    if (json.success) {
+                        showSuccess('Deleted!', json.message || 'Maintenance log deleted.', window.location.href, 1200);
+                    } else {
+                        showError('Delete Failed', json.message || 'Could not delete the maintenance log.');
+                    }
+                })
+                .catch(function () {
+                    showError('Connection Error', 'Could not reach the server. Please try again.');
+                });
+            });
+        });
+    });
 });

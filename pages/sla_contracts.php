@@ -8,17 +8,19 @@ require '../includes/header.php';
 try {
     if ($_SESSION['role'] === 'admin') {
         $stmt = $pdo->prepare("
-            SELECT s.*, c.company_name as client
+            SELECT s.*, c.company_name as client, COALESCE(v.hours_used, 0) as hours_used
             FROM sla_contracts s
             JOIN clients c ON s.client_id = c.id
+            LEFT JOIN v_sla_usage v ON v.client_id = s.client_id AND v.contract_id = s.id
             ORDER BY c.company_name ASC
         ");
         $stmt->execute();
     } else {
         $stmt = $pdo->prepare("
-            SELECT s.*, c.company_name as client
+            SELECT s.*, c.company_name as client, COALESCE(v.hours_used, 0) as hours_used
             FROM sla_contracts s
             JOIN clients c ON s.client_id = c.id
+            LEFT JOIN v_sla_usage v ON v.client_id = s.client_id AND v.contract_id = s.id
             WHERE s.client_id = ?
             ORDER BY s.id DESC
         ");

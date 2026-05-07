@@ -18,7 +18,7 @@ if (!$id) {
 }
 
 try {
-    $stmt = $pdo->prepare("SELECT * FROM maintenance_logs WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT m.*, t.client_id, t.subject AS ticket_subject FROM maintenance_logs m JOIN tickets t ON m.ticket_id = t.id WHERE m.id = ?");
     $stmt->execute([$id]);
     $log = $stmt->fetch();
 
