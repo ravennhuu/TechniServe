@@ -25,6 +25,16 @@ if ($id == $_SESSION['user_id']) {
 }
 
 try {
+    // Check if the user is an admin
+    $stmt = $pdo->prepare("SELECT role FROM users WHERE id = ?");
+    $stmt->execute([$id]);
+    $userToDelete = $stmt->fetch();
+
+    if ($userToDelete && $userToDelete['role'] === 'admin') {
+        echo json_encode(['success' => false, 'message' => 'Admin accounts cannot be deleted.']);
+        exit();
+    }
+
     $stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
     $stmt->execute([$id]);
 

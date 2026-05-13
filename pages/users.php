@@ -75,7 +75,7 @@ $s_map = ['active'=>'badge-resolved','inactive'=>'badge-closed'];
                     <th>Client Account</th>
                     <th>Last Login</th>
                     <th>Status</th>
-                    <th style="width: 80px;">Action</th>
+                    <th style="width: 140px;">Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -96,9 +96,11 @@ $s_map = ['active'=>'badge-resolved','inactive'=>'badge-closed'];
                     <td style="font-size:.8125rem;color:var(--text-muted);white-space:nowrap;"><?php echo $u['last_login']; ?></td>
                     <td><span class="ts-badge <?php echo $s_map[$u['status']] ?? 'badge-silver'; ?>"><?php echo ucfirst($u['status']); ?></span></td>
                     <td>
-                        <div style="display:flex; gap:0.25rem;">
+                        <div style="display:flex; gap:0.375rem;">
                             <a href="user_form.php?id=<?php echo $u['id']; ?>" class="btn-ts-secondary btn-ts-sm">Edit</a>
-                            <button type="button" class="btn-ts-primary btn-ts-sm" style="background-color: #dc3545; border-color: #dc3545;" onclick="deleteUser(<?php echo $u['id']; ?>)">Delete</button>
+                            <?php if ($u['role'] !== 'admin'): ?>
+                            <button type="button" class="btn-ts-danger btn-ts-sm" onclick="deleteUser(<?php echo $u['id']; ?>)">Delete</button>
+                            <?php endif; ?>
                         </div>
                     </td>
                 </tr>

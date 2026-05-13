@@ -20,7 +20,11 @@ try {
     $clients = $stmt->fetchAll();
 
     if ($editing) {
-        $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+        $stmt = $pdo->prepare("
+            SELECT u.*, c.id AS client_id 
+            FROM users u 
+            LEFT JOIN clients c ON u.id = c.user_id 
+            WHERE u.id = ?");
         $stmt->execute([$_GET['id']]);
         $user_data = $stmt->fetch();
         
