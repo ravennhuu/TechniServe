@@ -218,13 +218,23 @@ a:hover {
 
 .nav-logout {
     margin-top: auto;
-    color: rgba(220, 38, 38, .8) !important;
+    margin-left: 1.5rem !important;
+    margin-right: 1.5rem !important;
+    margin-bottom: 1rem !important;
+    background-color: #DC2626 !important;
+    color: #FFFFFF !important;
+    border-radius: 0.375rem !important;
+    padding: 0.625rem 1rem !important;
+    border-left: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    font-weight: 500 !important;
 }
 
 .nav-logout:hover {
-    color: #DC2626 !important;
-    background: rgba(220, 38, 38, .08) !important;
-    border-left-color: #DC2626 !important;
+    background-color: #B91C1C !important;
+    color: #FFFFFF !important;
 }
 
 /* â”€â”€ Page Area â”€â”€ */
