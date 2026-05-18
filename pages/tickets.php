@@ -172,10 +172,14 @@ $status_map   = ['open'=>'badge-open','in_progress'=>'badge-in-progress','resolv
         </div>
     </div>
 <?php else: ?>
-    <!-- Admin View (Existing Table) -->
-    <div class="ts-card">
+    <!-- Admin View (Active Tickets) -->
+    <div class="ts-card mb-4">
+        <div class="ts-card-header">
+            <h5 class="ts-card-title">Active Tickets</h5>
+            <span class="ts-badge badge-open"><?php echo count($active_tickets); ?> Total</span>
+        </div>
         <div class="ts-table-wrap">
-            <table class="ts-table" id="ticketsTable">
+            <table class="ts-table">
                 <thead>
                     <tr>
                         <th class="col-id">#ID</th>
@@ -189,7 +193,7 @@ $status_map   = ['open'=>'badge-open','in_progress'=>'badge-in-progress','resolv
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($tickets as $t): ?>
+                    <?php foreach ($active_tickets as $t): ?>
                     <tr>
                         <td class="col-id">
                             <a href="ticket_view.php?id=<?php echo $t['id']; ?>" class="text-navy">#<?php echo $t['id']; ?></a>
@@ -231,6 +235,80 @@ $status_map   = ['open'=>'badge-open','in_progress'=>'badge-in-progress','resolv
                         </td>
                     </tr>
                     <?php endforeach; ?>
+                    <?php if (empty($active_tickets)): ?>
+                        <tr><td colspan="8" class="text-center py-4 text-muted">No active tickets found.</td></tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Admin View (Closed Tickets) -->
+    <div class="ts-card">
+        <div class="ts-card-header">
+            <h5 class="ts-card-title">Closed Tickets</h5>
+            <span class="ts-badge badge-silver"><?php echo count($closed_tickets); ?> Total</span>
+        </div>
+        <div class="ts-table-wrap">
+            <table class="ts-table">
+                <thead>
+                    <tr>
+                        <th class="col-id">#ID</th>
+                        <th style="width: 20%;">Subject</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Client</th>
+                        <th>SLA Deduction</th>
+                        <th>Date</th>
+                        <th style="text-align:center; white-space:nowrap;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($closed_tickets as $t): ?>
+                    <tr>
+                        <td class="col-id">
+                            <a href="ticket_view.php?id=<?php echo $t['id']; ?>" class="text-navy">#<?php echo $t['id']; ?></a>
+                        </td>
+                        <td style="max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                            <?php echo htmlspecialchars($t['subject']); ?>
+                        </td>
+                        <td>
+                            <span class="ts-badge <?php echo $priority_map[$t['priority']] ?? 'badge-silver'; ?>">
+                                <?php echo ucfirst($t['priority']); ?>
+                            </span>
+                        </td>
+                        <td>
+                            <span class="ts-badge <?php echo $status_map[$t['status']] ?? 'badge-silver'; ?>">
+                                <?php echo ucfirst(str_replace('_',' ',$t['status'])); ?>
+                            </span>
+                        </td>
+                        <td class="text-muted-ts"><?php echo htmlspecialchars($t['client']); ?></td>
+                        <td>
+                            <?php if (isset($t['deducted_hours'])): ?>
+                            <div style="display:flex; flex-direction:column;">
+                                <span style="font-weight:600; color:var(--navy-deepest);">
+                                    <?php echo $t['deducted_hours'] . 'h'; ?>
+                                </span>
+                                <span style="font-size:0.65rem; color:#059669; font-weight:700; text-transform:uppercase; letter-spacing:0.02em;">
+                                    Auto-Deducted
+                                </span>
+                            </div>
+                            <?php else: ?>
+                            <span class="text-muted-ts">—</span>
+                            <?php endif; ?>
+                        </td>
+                        <td class="text-muted-ts" style="font-size:.8125rem;"><?php echo $t['created']; ?></td>
+                        <td style="text-align:center; white-space:nowrap;">
+                            <a href="ticket_view.php?id=<?php echo $t['id']; ?>" class="btn-ts-secondary btn-ts-sm" style="margin-right: 0.35rem;">View</a>
+                            <?php if (isset($_SESSION['role']) && in_array($_SESSION['role'], ['admin', 'technician'])): ?>
+                            <a href="ticket_edit.php?id=<?php echo $t['id']; ?>" class="btn-ts-primary btn-ts-sm">Edit</a>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                    <?php if (empty($closed_tickets)): ?>
+                        <tr><td colspan="8" class="text-center py-4 text-muted">No closed tickets found.</td></tr>
+                    <?php endif; ?>
                 </tbody>
             </table>
         </div>

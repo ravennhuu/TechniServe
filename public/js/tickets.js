@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var search   = document.getElementById('ticketSearch');
     var priority = document.getElementById('filterPriority');
     var status   = document.getElementById('filterStatus');
-    var rows     = document.querySelectorAll('#ticketsTable tbody tr');
+    var rows     = document.querySelectorAll('.ts-table tbody tr');
 
     function filterTable() {
         var q  = (search   ? search.value.toLowerCase()   : '');

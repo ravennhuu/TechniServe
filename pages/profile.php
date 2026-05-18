@@ -2,6 +2,26 @@
 // profile.php — Pair A
 // Current user profile view / edit. Dummy data only.
 require '../includes/auth.php';
+require '../includes/db.php';
+
+if (isset($_SESSION['role']) && $_SESSION['role'] === 'client') {
+    try {
+        $stmt = $pdo->prepare("
+            SELECT s.*, c.company_name as client, COALESCE(v.hours_used, 0) as hours_used
+            FROM sla_contracts s
+            JOIN clients c ON s.client_id = c.id
+            LEFT JOIN v_sla_usage v ON v.client_id = s.client_id AND v.contract_id = s.id
+            WHERE s.client_id = ?
+            ORDER BY s.id DESC
+            LIMIT 1
+        ");
+        $stmt->execute([$_SESSION['client_id']]);
+        $contract = $stmt->fetch();
+    } catch (PDOException $e) {
+        $contract = null;
+    }
+}
+
 require '../includes/header.php';
 ?>
 
@@ -52,8 +72,79 @@ require '../includes/header.php';
     <div class="col-lg-8">
         <div class="ts-card">
             <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'client'): ?>
-                <div class="ts-card-header"><h5 class="ts-card-title">Account Access</h5></div>
+                <div class="ts-card-header"><h5 class="ts-card-title">SLA Contract Details</h5></div>
                 <div class="ts-card-body">
+                    <?php if (isset($contract) && $contract): ?>
+                        <?php 
+                            $remaining = $contract['monthly_hours_pool'] - $contract['hours_used'];
+                            $percent = ($contract['monthly_hours_pool'] > 0) ? ($remaining / $contract['monthly_hours_pool']) * 100 : 0;
+                            $color = $percent > 50 ? '#059669' : ($percent > 20 ? '#D97706' : '#DC2626');
+                            
+                            $status = 'active';
+                            $s_map = ['active'=>'badge-resolved','expiring'=>'badge-high','expired'=>'badge-closed','inactive'=>'badge-silver'];
+                            if (!$contract['is_active']) $status = 'inactive';
+                            elseif (strtotime($contract['end_date']) < time()) $status = 'expired';
+                            elseif (strtotime($contract['end_date']) < strtotime('+30 days')) $status = 'expiring';
+
+                            function getPlanNameProfile($hours) {
+                                if ($hours <= 20) return 'Basic';
+                                if ($hours <= 50) return 'Professional';
+                                return 'Enterprise';
+                            }
+                            $plan = getPlanNameProfile($contract['monthly_hours_pool']);
+                            $p_map = ['Enterprise'=>'badge-navy','Professional'=>'badge-in-progress','Basic'=>'badge-silver'];
+                        ?>
+                        
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+                            <div>
+                                <h6 style="margin:0; font-size:1.125rem; color:var(--navy-deepest); font-weight:700;">Contract #<?php echo htmlspecialchars($contract['id']); ?></h6>
+                                <span class="ts-badge <?php echo $p_map[$plan] ?? 'badge-silver'; ?> mt-1" style="margin-top: 0.25rem; display: inline-block;"><?php echo $plan; ?> Plan</span>
+                            </div>
+                            <span class="ts-badge <?php echo $s_map[$status] ?? 'badge-silver'; ?>"><?php echo ucfirst($status); ?></span>
+                        </div>
+
+                        <div class="row g-3" style="margin-bottom:1.5rem;">
+                            <div class="col-sm-6">
+                                <div style="font-size:.8125rem; color:var(--text-muted); text-transform:uppercase; font-weight:600;">Start Date</div>
+                                <div style="font-weight:500; color:var(--text-primary);"><?php echo htmlspecialchars($contract['start_date']); ?></div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div style="font-size:.8125rem; color:var(--text-muted); text-transform:uppercase; font-weight:600;">End Date</div>
+                                <div style="font-weight:500; color:var(--text-primary);"><?php echo htmlspecialchars($contract['end_date']); ?></div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom:1.5rem;">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:.5rem;">
+                                <span style="font-size:.875rem; font-weight:600; color:var(--text-primary);">Monthly Hours Pool</span>
+                                <span style="font-size:.875rem; font-weight:700; color:var(--navy-deepest);">
+                                    <?php echo number_format($remaining, 1); ?> / <?php echo htmlspecialchars($contract['monthly_hours_pool']); ?>h remaining
+                                </span>
+                            </div>
+                            <div style="width:100%; height:8px; background:#E2E8F0; border-radius:4px; overflow:hidden;">
+                                <div style="width:<?php echo max(0, min(100, $percent)); ?>%; height:100%; background:<?php echo $color; ?>; border-radius:4px; transition:width 0.3s ease;"></div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <div style="font-size:.8125rem; color:var(--text-muted); text-transform:uppercase; font-weight:600;">Response Time SLA</div>
+                                <div style="font-weight:500; color:var(--text-primary);"><?php echo htmlspecialchars($contract['response_time_hrs']); ?> hours</div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div style="font-size:.8125rem; color:var(--text-muted); text-transform:uppercase; font-weight:600;">Resolution SLA</div>
+                                <div style="font-weight:500; color:var(--text-primary);"><?php echo htmlspecialchars($contract['resolution_time_hrs']); ?> hours</div>
+                            </div>
+                        </div>
+
+                    <?php else: ?>
+                        <div class="ts-alert ts-alert-info">
+                            No active SLA contract found for your account. Please contact the administrator.
+                        </div>
+                    <?php endif; ?>
+                    
+                    <div class="divider" style="margin: 1.5rem 0;"></div>
+                    
                     <div class="ts-alert ts-alert-info">
                         Profile editing is restricted for client accounts. Please contact the administrator for any information updates.
                     </div>

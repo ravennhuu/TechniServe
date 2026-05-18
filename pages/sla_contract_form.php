@@ -56,7 +56,7 @@ try {
                 <?php $sla_action = $editing ? '../api/sla/update.php' : '../api/sla/create.php'; ?>
                 <form action="<?php echo $sla_action; ?>" method="POST" id="slaForm">
                     <?php if ($editing): ?>
-                    <input type="hidden" name="contract_id" value="<?php echo htmlspecialchars($_GET['id']); ?>">
+                    <input type="hidden" name="id" value="<?php echo htmlspecialchars($_GET['id']); ?>">
                     <?php endif; ?>
 
                     <div class="ts-form-group">

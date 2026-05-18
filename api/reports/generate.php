@@ -38,8 +38,13 @@ try {
         ]);
     }
 
-    echo json_encode(['success' => true, 'message' => "Reports for $month/$year generated successfully."]);
+    $stmt = $pdo->prepare("SELECT * FROM v_monthly_report WHERE month = ? AND year = ?");
+    $stmt->execute([$month, $year]);
+    $reports_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    echo json_encode(['success' => true, 'message' => "Reports for $month/$year generated successfully.", 'data' => $reports_data, 'month' => $month, 'year' => $year]);
 } catch (PDOException $e) {
     http_response_code(500);
     echo json_encode(['success' => false, 'message' => 'Failed to generate reports: ' . $e->getMessage()]);
 }
+

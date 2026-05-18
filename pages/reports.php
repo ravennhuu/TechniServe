@@ -306,6 +306,139 @@ function getMonthName($n) {
     </div>
 </div>
 
+<!-- Report Output Modal -->
+<div id="reportOutputOverlay" class="d-none" style="position:fixed;inset:0;background:rgba(10,20,40,.6);backdrop-filter:blur(6px);z-index:9999;align-items:center;justify-content:center;padding:2rem;">
+    <div id="printableReport" style="background:#fff;border-radius:16px;padding:2.5rem;max-width:1000px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(10,20,40,.25);display:flex;flex-direction:column;position:relative;">
+        <div class="d-flex justify-content-between align-items-center mb-4 no-print" style="border-bottom: 2px solid var(--gray-100); padding-bottom: 1rem; position: relative; z-index: 10;">
+            <h5 style="font-size:1.5rem;font-weight:700;color:var(--navy-deepest);margin:0;">Monthly Performance Report</h5>
+            <div style="display:flex;gap:.75rem;">
+                <button class="btn-ts-secondary btn-ts-sm" onclick="exportReportCSV()">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:6px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg> Export CSV
+                </button>
+                <button class="btn-ts-primary btn-ts-sm" onclick="printReport()">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:6px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg> Save PDF
+                </button>
+                <button class="btn-ts-secondary btn-ts-sm" onclick="closeReportOutputModal()" style="border:none;background:var(--gray-100);color:var(--gray-700);">Close</button>
+            </div>
+        </div>
+        
+        <div id="reportContent" style="flex:1;">
+            <div style="background: var(--navy-deepest); border-radius: 12px; padding: 1.25rem 2rem; display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; -webkit-print-color-adjust: exact; print-color-adjust: exact;" class="report-header-banner">
+                <!-- Height-bounded container using overflow:hidden to crop the huge transparent PNG padding -->
+                <div style="height: 60px; width: 220px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                    <img src="../public/assets/images/TechniServeLogo.png" alt="TechniServe Logo" style="width: 220px; height: auto; display: block; transform: scale(1.8); pointer-events: none;" class="print-logo" />
+                </div>
+                <div style="text-align: right; color: white;">
+                    <h2 style="color: white; margin: 0 0 0.15rem 0; font-weight: 800; font-size: 1.6rem; letter-spacing: -0.5px;">SLA Performance Report</h2>
+                    <h5 id="reportPeriodText" style="color: rgba(255,255,255,0.8); margin: 0; font-weight: 500; font-size: 0.95rem;"></h5>
+                </div>
+            </div>
+            
+            <div class="table-responsive" style="border-radius:12px;overflow:hidden;border:1px solid var(--gray-200);">
+                <table class="table table-striped mb-0" style="width:100%;font-size:0.95rem;">
+                    <thead style="background:var(--navy-deepest);color:white;">
+                        <tr>
+                            <th style="font-weight:600;padding:1rem;border:none;">Client</th>
+                            <th class="text-center" style="font-weight:600;padding:1rem;border:none;">Tickets</th>
+                            <th class="text-center" style="font-weight:600;padding:1rem;border:none;">Resolved</th>
+                            <th class="text-center" style="font-weight:600;padding:1rem;border:none;">Closed</th>
+                            <th class="text-center" style="font-weight:600;padding:1rem;border:none;">Breaches</th>
+                            <th class="text-center" style="font-weight:600;padding:1rem;border:none;">Compliance</th>
+                            <th class="text-center" style="font-weight:600;padding:1rem;border:none;">Avg Response</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportTableBody" style="border-top:none;">
+                        <!-- Populated via JS -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="mt-5 d-flex justify-content-between align-items-end" style="border-top:1px solid var(--gray-200);padding-top:1.5rem;">
+                <div style="font-size:0.85rem;color:var(--text-muted);">
+                    <p style="margin-bottom:0.25rem;"><strong>Generated on:</strong> <span id="reportGeneratedDate"></span></p>
+                    <p style="margin-bottom:0;"><strong>Generated by:</strong> TechniServe Admin Portal</p>
+                </div>
+                <div style="text-align:right;">
+                    <p style="font-size:0.85rem;color:var(--text-muted);margin:0;">&copy; <?php echo date('Y'); ?> TechniServe IT Managed Services</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    @page {
+        margin: 0;
+    }
+    body {
+        margin: 1.6cm !important;
+        background: #fff !important;
+    }
+
+    /* Hide ALL layout components */
+    .ts-sidebar, .ts-topbar, .page-header, .row, .ts-card, footer, #genReportOverlay {
+        display: none !important;
+    }
+    
+    /* Make sure parents don't constrain the height or width */
+    .ts-wrapper, .ts-page, .ts-content {
+        display: block !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+        box-shadow: none !important;
+        background: transparent !important;
+    }
+
+    /* Style the report overlay so it's a normal block element on the page, not fixed */
+    #reportOutputOverlay {
+        position: static !important;
+        display: block !important;
+        background: transparent !important;
+        backdrop-filter: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+    }
+
+    /* Make sure printable element fills page exactly and has no scrollbars or constrained height */
+    #printableReport {
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        border-radius: 0 !important;
+        background: white !important;
+    }
+
+    .no-print {
+        display: none !important;
+    }
+
+    .table th {
+        background: #0B2545 !important; /* matches sidebar (--navy-deepest) */
+        color: white !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    
+    .table td, .table th {
+        border-color: #ddd !important;
+        padding: 0.75rem !important;
+    }
+}
+</style>
+
 <script src="../public/js/chart.min.js"></script>
 <script>
     var dynamicChartResData = <?php echo json_encode($res_values); ?>;
@@ -321,6 +454,95 @@ function closeGenerateModal() {
     var o = document.getElementById('genReportOverlay');
     if (o) { o.style.display = 'none'; }
 }
+
+let currentReportData = [];
+let currentReportPeriod = '';
+
+function closeReportOutputModal() {
+    var o = document.getElementById('reportOutputOverlay');
+    if (o) { 
+        o.classList.add('d-none'); 
+        o.style.display = 'none';
+        window.location.reload();
+    }
+}
+
+function printReport() {
+    window.print();
+}
+
+function exportReportCSV() {
+    if (!currentReportData || currentReportData.length === 0) {
+        alert("No data to export.");
+        return;
+    }
+    
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "Client,Total Tickets,Resolved Tickets,Closed Tickets,SLA Breaches,Compliance (%),Avg Response (hrs)\n";
+    
+    currentReportData.forEach(function(rowArray) {
+        let row = [
+            `"${rowArray.company_name}"`,
+            rowArray.total_tickets,
+            rowArray.resolved_tickets,
+            rowArray.closed_tickets !== undefined ? rowArray.closed_tickets : 0,
+            rowArray.sla_breaches,
+            rowArray.compliance_pct,
+            rowArray.avg_response_hrs
+        ].join(",");
+        csvContent += row + "\r\n";
+    });
+    
+    var encodedUri = encodeURI(csvContent);
+    var link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `SLA_Report_${currentReportPeriod.replace(' ', '_')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function showReportOutput(data, month, year) {
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const monthName = months[month - 1];
+    currentReportPeriod = `${monthName} ${year}`;
+    currentReportData = data;
+    
+    document.getElementById('reportPeriodText').textContent = `Period: ${currentReportPeriod}`;
+    
+    // Formatting date
+    const d = new Date();
+    document.getElementById('reportGeneratedDate').textContent = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    
+    const tbody = document.getElementById('reportTableBody');
+    tbody.innerHTML = '';
+    
+    if(data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4">No data available for this period.</td></tr>';
+    } else {
+        data.forEach(r => {
+            let tr = document.createElement('tr');
+            let complianceColor = r.compliance_pct >= 95 ? 'color: var(--resolved); font-weight:700;' : 'color: var(--critical); font-weight:700;';
+            tr.innerHTML = `
+                <td style="font-weight:600;padding:1rem;">${r.company_name}</td>
+                <td class="text-center" style="padding:1rem;">${r.total_tickets}</td>
+                <td class="text-center" style="padding:1rem;">${r.resolved_tickets}</td>
+                <td class="text-center" style="padding:1rem;">${r.closed_tickets !== undefined ? r.closed_tickets : 0}</td>
+                <td class="text-center" style="padding:1rem;${r.sla_breaches > 0 ? 'color:var(--critical);font-weight:600;' : ''}">${r.sla_breaches}</td>
+                <td class="text-center" style="padding:1rem;${complianceColor}">${r.compliance_pct}%</td>
+                <td class="text-center" style="padding:1rem;">${r.avg_response_hrs ? Number(r.avg_response_hrs).toFixed(1) + 'h' : '—'}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+    
+    var o = document.getElementById('reportOutputOverlay');
+    if (o) { 
+        o.classList.remove('d-none');
+        o.style.display = 'flex'; 
+    }
+}
+
 function runGenerate() {
     var btn   = document.getElementById('genReportConfirmBtn');
     var month = document.getElementById('genMonth').value;
@@ -341,12 +563,16 @@ function runGenerate() {
             btn.innerHTML = originalHtml;
             closeGenerateModal();
             if (json.success) {
-                showSuccess('Reports Generated!', json.message, null);
-                var closeBtn = document.getElementById('tsModalCloseBtn');
-                if (closeBtn) {
-                    closeBtn.addEventListener('click', function () {
-                        window.location.reload();
-                    }, { once: true });
+                if (json.data) {
+                    showReportOutput(json.data, json.month, json.year);
+                } else {
+                    showSuccess('Reports Generated!', json.message, null);
+                    var closeBtn = document.getElementById('tsModalCloseBtn');
+                    if (closeBtn) {
+                        closeBtn.addEventListener('click', function () {
+                            window.location.reload();
+                        }, { once: true });
+                    }
                 }
             } else {
                 showError('Generation Failed', json.message || 'Could not generate reports.');
