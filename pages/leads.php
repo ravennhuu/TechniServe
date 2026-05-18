@@ -42,19 +42,19 @@ $s_map = ['pending'=>'badge-open', 'approved'=>'badge-resolved', 'rejected'=>'ba
         elseif ($l['status'] === 'rejected') $rejected++;
     }
     ?>
-    <div class="kpi-card" style="padding:.75rem 1.25rem;flex:0 0 auto;">
+    <div class="kpi-card" style="padding:.75rem 1.25rem;flex: 1;">
         <div class="kpi-data">
             <div class="kpi-value" style="font-size:1.375rem;"><?php echo $pending; ?></div>
             <div class="kpi-label">Pending Review</div>
         </div>
     </div>
-    <div class="kpi-card" style="padding:.75rem 1.25rem;flex:0 0 auto;">
+    <div class="kpi-card" style="padding:.75rem 1.25rem;flex: 1;">
         <div class="kpi-data">
             <div class="kpi-value" style="font-size:1.375rem;color:#059669;"><?php echo $approved; ?></div>
             <div class="kpi-label">Approved</div>
         </div>
     </div>
-    <div class="kpi-card" style="padding:.75rem 1.25rem;flex:0 0 auto;">
+    <div class="kpi-card" style="padding:.75rem 1.25rem;flex: 1;">
         <div class="kpi-data">
             <div class="kpi-value" style="font-size:1.375rem;color:#DC2626;"><?php echo $rejected; ?></div>
             <div class="kpi-label">Rejected</div>

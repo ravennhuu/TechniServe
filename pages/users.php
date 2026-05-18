@@ -69,13 +69,13 @@ $s_map = ['active'=>'badge-resolved','inactive'=>'badge-closed'];
             <thead>
                 <tr>
                     <th class="col-id">#</th>
-                    <th style="width: 20%;">Name</th>
-                    <th style="width: 25%;">Email</th>
+                    <th>Name</th>
+                    <th>Email</th>
                     <th>Role</th>
                     <th>Client Account</th>
                     <th>Last Login</th>
                     <th>Status</th>
-                    <th style="width: 140px;">Action</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -93,7 +93,7 @@ $s_map = ['active'=>'badge-resolved','inactive'=>'badge-closed'];
                     <td style="font-size:.8125rem;"><a href="mailto:<?php echo $u['email']; ?>" class="text-navy"><?php echo htmlspecialchars($u['email']); ?></a></td>
                     <td><span class="ts-badge <?php echo $r_map[$u['role']] ?? 'badge-silver'; ?>"><?php echo ucfirst($u['role']); ?></span></td>
                     <td style="font-size:.875rem;color:var(--text-muted);"><?php echo htmlspecialchars($u['client']); ?></td>
-                    <td style="font-size:.8125rem;color:var(--text-muted);white-space:nowrap;"><?php echo $u['last_login']; ?></td>
+                    <td style="font-size:.8125rem;color:var(--text-muted);"><?php echo $u['last_login']; ?></td>
                     <td><span class="ts-badge <?php echo $s_map[$u['status']] ?? 'badge-silver'; ?>"><?php echo ucfirst($u['status']); ?></span></td>
                     <td>
                         <div style="display:flex; gap:0.375rem;">
