@@ -1,372 +1,307 @@
 # TechniServe — Presentation Guide
-### IT Managed Services & SLA Portal | B2B Web Application
+### IT Managed Services & SLA Portal | B2B Web Application Presentation Guide
 
-> **Instructions:** This guide covers all 15 slides of your final presentation. Each section contains the exact talking points, key phrases, and technical details to highlight per slide. Do not change anything in the source code — this guide is for presentation use only.
+This guide details all 15 slides for the final presentation. Each section outlines the slide heading, visual elements to display, technical implementation highlights, and the exact talking points for the presenter.
 
 ---
 
-## Slide 1 — Title Slide
-**Heading:** TechniServe: IT Managed Services & SLA Portal
+## Slide 1: Title Slide
+**Slide Heading:** TechniServe: IT Managed Services & SLA Portal
 
 ### What to Display
-- **System Logo:** `public/assets/logo.png`
-- **Tagline:** *"A B2B platform for IT firms to deliver managed maintenance services to corporate client offices under a formal Service Level Agreement."*
-- **Group Number & Class Section:** *(fill in your section)*
+- **System Logo:** Located at `public/assets/logo.png`
+- **Tagline:** *"Enterprise-grade IT managed maintenance and SLA portal for modern corporate offices."*
+- **Group Details:** Section and Group Number *(e.g., Class Section / Group X)*
 - **Team Members & Roles:**
-
-| Name | Role |
-|---|---|
-| Alamo, Avryl Raven A. | Project Manager / Lead Analyst |
-| San Diego, Francoise Maris A. | UI/UX & Frontend Developer |
-| Estilo, Irish Mae C. | UI/UX & Frontend Developer |
-| Pitogo, Gian Paulo C. | Backend & API Developer |
-| Panganiban, Jiyan Braian R. | Backend & API Developer |
-| Pontañeles, Tito III P. | Database Administrator (DBA) |
-| Sapida, Jake Andrei A. | Database Administrator (DBA) |
+  - **Avryl Raven A. Alamo** — Project Manager / Lead Analyst
+  - **Francoise Maris A. San Diego** — UI/UX & Frontend Developer
+  - **Irish Mae C. Estilo** — UI/UX & Frontend Developer
+  - **Gian Paulo C. Pitogo** — Backend & API Developer
+  - **Jiyan Braian R. Panganiban** — Backend & API Developer
+  - **Tito III P. Pontañeles** — Database Administrator (DBA)
+  - **Jake Andrei A. Sapida** — Database Administrator (DBA)
 
 ### Talking Points
-- Briefly introduce the project name and what type of system it is.
-- Mention that this is a **B2B (Business-to-Business)** web portal — meaning both users of the system are businesses, not individual consumers.
-- State the 6-week development timeline and the tech stack: PHP, MySQL, Bootstrap 5, Chart.js.
+* "Good day, everyone. Today, we are presenting **TechniServe**, a dedicated Business-to-Business (B2B) web portal designed for IT service providers to deliver and track managed maintenance services under formal Service Level Agreements (SLA)."
+* "Our team built this system over a 6-week timeline, utilizing a secure, lightweight PHP backend, MySQL database, and local Bootstrap 5 styling to ensure maximum independence and performance."
+* "Throughout this presentation, we will walk you through the business challenge, our architecture, role-based controls, and the core automated workflows that power the platform."
 
 ---
 
-## Slide 2 — The Business Problem
-**Heading:** The Core B2B Challenge
+## Slide 2: The Business Problem
+**Slide Heading:** The Core B2B Challenge
 
 ### What to Display
-- The traditional, manual pain point in IT managed services:
-  > *"Corporate offices manually contact their IT provider via phone or email whenever a system goes down. There is no formal tracking, no priority system, no SLA visibility, and no paper trail."*
-- **Consequences of the problem:**
-  - 🔴 **Lost records** — no centralized log of what was fixed and when
-  - 🔴 **No accountability** — clients don't know if their SLA hours are being used efficiently
-  - 🔴 **Slow response** — no priority system means critical issues wait as long as minor ones
-  - 🔴 **No compliance data** — neither party can prove whether the SLA was met or breached
+* **The Manual Bottleneck:** 
+  > *"Corporate clients traditionally text or call IT technicians whenever an outage occurs, leaving no formal paper trail, zero SLA tracking, and no ticket prioritization."*
+* **Consequences of the Problem:**
+  * 🔴 **Operational Delays:** Critical network or server issues wait in the same queue as minor printer setup requests.
+  * 🔴 **Untracked SLA Commitments:** IT firms cannot prove they met their guaranteed 4-hour response or 24-hour resolution times.
+  * 🔴 **Billing & Hours Disputes:** Clients have no transparent way to verify how their pre-paid monthly SLA support hours are spent.
+  * 🔴 **Data Silos & Loss:** Lack of a centralized audit trail results in lost logs, recurring issues being unresolved, and poor accountability.
 
 ### Talking Points
-- The IT services industry traditionally runs on phone calls, text messages, and spreadsheets.
-- When a client's network goes down, they text their IT vendor — and then wait, with no visibility on response time or resolution progress.
-- SLA contracts exist on paper, but there is no digital system to enforce or track them in real time.
-- This results in disputes, client dissatisfaction, and no hard data to prove service delivery.
+* "In the B2B IT service sector, the traditional way of handling support is highly fragmented. Clients report issues via personal messaging, phone calls, or emails."
+* "This creates significant manual bottlenecks. Technicians get overwhelmed, critical downtime issues are delayed, and paper-based SLA compliance is impossible to verify."
+* "Ultimately, this leads to disputes over contract hours, slow resolutions, and lost revenue for both the provider and the client due to extended IT downtime."
 
 ---
 
-## Slide 3 — The Digital Solution
-**Heading:** System Value Proposition
+## Slide 3: The Digital Solution
+**Slide Heading:** System Value Proposition
 
 ### What to Display
-- **System Name:** TechniServe
-- **One-line pitch:** *"A full B2B web portal that digitalizes IT support delivery — from the initial client inquiry all the way to monthly SLA compliance reports."*
-- **3 Immediate Benefits:**
-  1. ✅ **Faster Processing** — Clients submit structured tickets instantly; Admin sees them in a live queue with priority badges
-  2. ✅ **Accurate Records** — Every status change, maintenance log, and SLA usage figure is stored in MySQL with a full audit trail
-  3. ✅ **Secure Access** — No public sign-up; controlled onboarding ensures only vetted, contracted clients access the portal
+- **System Name:** TechniServe Portal
+- **The B2B Automation Flow:**
+  `Lead Capture (index.php) → Admin Vetting → SLA Account Creation → Support Ticket Life-Cycle → Automated Hours Deduction → Monthly Performance Manifests`
+- **3 Immediate Business Benefits:**
+  1. ✅ **Faster Ticket Processing:** Clients submit structured tickets with priority metadata; Admins view and update them in real time.
+  2. ✅ **Accurate, Automated Records:** Centralized database computes SLA consumption live, removing manual bookkeeping errors.
+  3. ✅ **Secure B2B Data Isolation:** Restricted multi-role routing ensures client companies can only see their own tickets and contracts.
 
 ### Talking Points
-- TechniServe replaces the phone/text/spreadsheet workflow with a structured, role-based web portal.
-- The system has **two layers**: a public landing page (`index.php`) for lead capture, and a secure authenticated portal (`/pages/`) for daily operations.
-- The portal automates the B2B transaction loop: from ticket submission → admin response → maintenance logging → SLA tracking → monthly report generation.
+* "Our solution, TechniServe, digitalizes and automates this B2B relationship from start to finish."
+* "The system operates on two layers: a public marketing page with a secure Lead Capture form, and an authenticated operations portal."
+* "By automating the ticket-to-maintenance lifecycle, we guarantee three main benefits: significantly faster ticket processing, accurate hours-deduction tracking, and secure, isolated data access for corporate clients."
 
 ---
 
-## Slide 4 — Target Users & Access Control
-**Heading:** Role-Based Access Control (RBAC)
+## Slide 4: Target Users & Access Control
+**Slide Heading:** Role-Based Access Control (RBAC)
 
 ### What to Display
-
-#### Provider / Admin User (the IT Firm — TechniServe)
-- **Controls:** Full access to every module
-- **Can do:** Onboard clients, manage SLA contracts, resolve tickets, log maintenance, generate reports, view analytics
-- **Cannot do:** Submit tickets (that is the client's job)
-
-#### Client User (the Corporate Office)
-- **Controls:** Their own data only
-- **Can do:** Submit support tickets (Low / High / Critical), view their own ticket history, view their SLA usage status, download their monthly reports
-- **Cannot do:** See other clients' tickets, access admin analytics, manage users
+* **Admin Role (IT Service Provider):**
+  * Controls all modules, client company configurations, user account creations, and SLA contracts (Full CRUD).
+  * Directs ticket responses, logs maintenance hours, and generates monthly performance reports.
+* **Client Role (Corporate Client Office):**
+  * Submits support tickets specifying urgency (Low, High, Critical).
+  * Monitors their ticket history, tracks live SLA hours usage, and downloads generated monthly reports.
+* **The B2B Controlled-Entry Model:**
+  * **No public sign-up/register form** is available. 
+  * New clients must submit a "Request Access" inquiry from `index.php` which goes to `pages/leads.php`.
+  * The Admin reviews the lead and manually creates the client login and SLA contracts.
 
 ### Talking Points
-- There are **only two roles** in the system: `admin` and `client`. There is no technician role.
-- **No public registration exists** — there is no `/register.php` or `/signup.php`. Client accounts are created manually by the Admin after a lead is reviewed and approved.
-- This is a deliberate B2B design choice: a client must have a signed SLA contract before they can submit any tickets. Open registration would allow uncontracted companies to flood the system with requests.
-- The 3-step onboarding flow: Lead submits inquiry → Admin approves → Admin creates login + assigns SLA contract → Client receives credentials.
-- Access control is enforced server-side via `includes/auth.php` (session check) and `guardRole()` in `includes/functions.php`.
+* "To protect the integrity of the platform, we implement strict Role-Based Access Control, or RBAC."
+* "We intentionally support exactly two roles: the IT Provider Admin and the corporate Client. We do not have a public register link; allowing open registration would let non-contracted companies log critical tickets."
+* "Admins manage the entire workspace, while clients can only interact with their own ticket forms, track their remaining SLA hours pool, and download monthly reports."
 
 ---
 
-## Slide 5 — Database Architecture
-**Heading:** Entity Relationship Diagram (ERD)
+## Slide 5: Database Architecture
+**Slide Heading:** Entity Relationship Diagram (ERD)
 
 ### What to Display
-- **Embed:** `docs/ERD.png` (screenshot of your MySQL schema from phpMyAdmin)
-- **8 Tables Summary:**
-
-| Table | Purpose |
-|---|---|
-| `users` | All login accounts (admin & client). Created by Admin only. |
-| `clients` | Corporate client company profiles. Linked 1-to-1 to a user. |
-| `sla_contracts` | SLA terms per client: monthly hours pool, site visits, response time limits. |
-| `tickets` | Support tickets with priority (low/high/critical) and status workflow. |
-| `ticket_activities` | Full audit trail — every status change on every ticket. |
-| `maintenance_logs` | Maintenance activities performed, linked to tickets. Hours auto-aggregated. |
-| `reports` | Records of monthly report generation events per client. |
-| `leads` | Public "Request Access" form submissions from the landing page. |
+- **Schema Visual:** Embed clean view of `docs/ERD.png`
+- **Third Normal Form (3NF) Normalization Highlights:**
+  - **Removed Redundancy:** Removed `client_id` from `users` — link is managed via `clients.user_id` (1-to-1).
+  - **Computed Fields Removed:** Removed running totals (`hours_used`, `site_visits_used`) from `sla_contracts` and aggregate metrics from `reports`.
+  - **Computed VIEWS Created:** Implemented `v_sla_usage` and `v_monthly_report` to compute aggregates live.
+- **Table Relationships:**
+  - `clients` acts as the hub connecting `users`, `sla_contracts`, `tickets`, and `reports`.
+  - `maintenance_logs` foreign-keys directly to `tickets` (deriving client ownership via the ticket structure).
 
 ### Talking Points
-- The schema is designed to **Third Normal Form (3NF)** — no redundant or derived data is stored.
-- Key design decisions made during 3NF normalization:
-  - `users.client_id` was removed — the relationship is stored once, in `clients.user_id`
-  - `sla_contracts.hours_used` was removed — computed live via the `v_sla_usage` VIEW by aggregating `maintenance_logs`
-  - `maintenance_logs.client_id` was removed — the client is derived through `maintenance_logs → tickets → clients`
-  - `reports` aggregate columns were removed — live figures are computed via the `v_monthly_report` VIEW
-- Two SQL VIEWS replace the removed columns: `v_sla_usage` and `v_monthly_report`.
-- Primary relationships to highlight: **`clients` is the hub** — `sla_contracts`, `tickets`, and `reports` all foreign-key into `clients.id`.
+* "Our database schema is fully normalized to Third Normal Form, ensuring zero redundant data and absolute data integrity."
+* "To achieve this, we removed derived columns like 'hours used' and 'total tickets' from our tables. Instead, we compute these aggregates dynamically using optimized MySQL views: `v_sla_usage` and `v_monthly_report`."
+* "The `clients` table acts as our relational hub, binding login credentials, SLA policies, support tickets, and monthly manifests together."
 
 ---
 
-## Slide 6 — System Workflow
-**Heading:** The End-to-End B2B Transaction Loop
+## Slide 6: System Workflow
+**Slide Heading:** The End-to-End B2B Transaction Loop
 
 ### What to Display
-A step-by-step flow of the full transaction lifecycle:
-
-```
-[LANDING PAGE]
- 1. Visitor fills "Request Access" form on index.php
-    → api/leads/submit.php saves to leads table
-    → Admin reviews in pages/leads.php
-
-[ONBOARDING]
- 2. Admin approves lead → creates user account (pages/user_form.php)
- 3. Admin assigns SLA contract (pages/sla_contract_form.php)
-    → Client receives credentials
-
-[DAILY OPERATIONS]
- 4. Client logs in → submits a support ticket (pages/ticket_create.php)
-    → ticket saved with status = 'open', priority = low/high/critical
- 5. Admin views pending queue (pages/tickets.php)
-    → Admin updates ticket status: open → in_progress → resolved
-    → Each change logged to ticket_activities (audit trail)
-
-[MAINTENANCE & SLA]
- 6. Admin logs maintenance activity (pages/maintenance_create.php)
-    → hours_spent recorded in maintenance_logs
-    → v_sla_usage VIEW auto-aggregates hours used vs. pool
-
-[REPORTING]
- 7. Admin generates Monthly Service Report (pages/reports.php)
-    → v_monthly_report VIEW computes all figures live
-    → Report record saved to reports table
-    → Client can view/print their report
-```
+- **Step-by-Step Lifecycle Flowchart:**
+  ```
+  [1] Lead Inquiry Submitted (index.php Form)
+             │
+             ▼
+  [2] Admin Reviews & Approves Lead (pages/leads.php)
+             │
+             ▼
+  [3] Admin Creates Account & Assigns SLA Policy (pages/user_form.php)
+             │
+             ▼
+  [4] Client Logs in & Submits Support Ticket (pages/ticket_create.php)
+             │
+             ▼
+  [5] Admin Updates Ticket & Records Maintenance Work (api/maintenance/create.php)
+             │
+             ▼
+  [6] System Deducts SLA Hours & Generates Compliance Manifest (pages/reports.php)
+  ```
 
 ### Talking Points
-- This loop replaces the entire phone/email/spreadsheet workflow with one integrated system.
-- The flow is **fully traceable** — from the first inquiry on the landing page to the final monthly report, every action is stored.
-- Highlight the separation of concerns: the client only acts in steps 4 and 7 (submit + view). Admin handles everything in between.
+* "Here we trace the complete end-to-end B2B transaction loop of TechniServe."
+* "It starts when an interested business requests access. Once vetted and onboarded by an admin, the client can log in to submit tickets."
+* "When an admin resolves the ticket and logs maintenance, the hours are immediately deducted from the client's SLA pool. At the end of the month, the admin generates a compliance report with a single click."
 
 ---
 
-## Slide 7 — Desktop UI & UX Design Philosophy
-**Heading:** PC-Optimized User Interface
+## Slide 7: Desktop UI & UX Design Philosophy
+**Slide Heading:** PC-Optimized User Interface
 
 ### What to Display
-- Screenshot of the Admin dashboard showing the multi-column layout
-- Screenshot of the sidebar navigation in `includes/header.php`
+- **Key UI Elements (Bootstrap 5):**
+  - Use of `container-fluid` for wide, responsive desktop layouts.
+  - A fixed left navigation sidebar (`includes/header.php`) for persistent, single-click navigation.
+  - Interactive table filtering using vanilla JavaScript.
+- **Power User Features:**
+  - Fast Client-side searching, sorting, and pagination.
+  - Dense grid views showing ticket statuses and priority badges (`bg-danger`, `bg-warning`, `bg-success`).
+  - Bootstrap Modals for CRUD operations to keep admins in their work context.
 
 ### Talking Points
-- **Why desktop-first?** TechniServe is a **power-user tool** for IT administrators and corporate office managers who work at desktop workstations — not on phones. A dense multi-column layout lets admins track multiple open tickets simultaneously without endless scrolling.
-- **Bootstrap 5 layout choices:**
-  - `container-fluid` is used throughout the portal for wide-screen utilization — no wasted whitespace on large monitors
-  - A **fixed left sidebar** in `includes/header.php` provides persistent, one-click navigation to all modules (Tickets, Maintenance, Reports, etc.) without losing context
-  - **Bootstrap grid** (`col-md-4`, `col-lg-3`) creates responsive multi-column dashboards that show KPI cards, ticket counts, and SLA status side by side
-  - **Bootstrap badges** (`bg-danger`, `bg-warning`, `bg-success`) provide instant visual priority coding on ticket tables
-- **DataTables.js** is integrated on list pages for client-side search, sort, and pagination — critical when an admin manages dozens of concurrent tickets.
-- **Bootstrap Modals** are used for adding/editing records (e.g., SLA contracts, users) so the admin never loses their place in a long table.
+* "Unlike consumer apps that are mobile-first, TechniServe is designed as a desktop-first, power-user interface."
+* "IT administrators and office managers operate on desktop workstations. They need dense, multi-column layouts to manage dozens of concurrent tasks without scrolling."
+* "We utilized Bootstrap 5's grid system and local styling to design a widescreen portal with sticky navigation, colored status badges, and rapid filtering features."
 
 ---
 
-## Slide 8 — Core Feature 1: Secure Authentication
-**Heading:** Secure Multi-Role Login
+## Slide 8: Core Feature 1 – Secure Authentication
+**Slide Heading:** Secure Multi-Role Login
 
 ### What to Display
-- Screenshot of `login.php`
-- Diagram or bullet list of the session-based routing logic
+- **Visuals:** Screenshot of `login.php` showing the modern, split-pane layout.
+- **Backend PHP Session Guard Details:**
+  - Form POSTs to `api/auth/login.php`.
+  - Credentials verified using `password_verify()` against Bcrypt hashes in the `users` table.
+  - Secure parameters set: `$_SESSION['user_id']`, `$_SESSION['role']`, `$_SESSION['client_id']`.
+  - Global guards: `includes/auth.php` redirects unauthenticated users; `guardRole('admin')` blocks client privilege escalation.
 
 ### Talking Points
-- The login form (`login.php`) submits credentials via POST to `api/auth/login.php`.
-- **Backend logic in `api/auth/login.php`:**
-  1. Sanitizes the email and password inputs
-  2. Queries the `users` table using a **PDO Prepared Statement** (protects against SQL injection)
-  3. Verifies the submitted password against the stored `password_hash` using PHP's `password_verify()`
-  4. On success: stores `$_SESSION['user_id']`, `$_SESSION['role']`, and `$_SESSION['name']`
-  5. Routes the user: `role = 'admin'` → `pages/dashboard.php` (admin view); `role = 'client'` → `pages/dashboard.php` (client view, filtered data)
-- **Every protected page** begins with `require '../includes/auth.php'` which calls `session_start()` and checks `$_SESSION['user_id']` — if not set, the user is immediately redirected back to `login.php`.
-- Admin-only pages additionally call `guardRole('admin')` from `includes/functions.php`, which returns a 403 JSON error (for API endpoints) or redirects to the dashboard (for portal pages).
-- **No public sign-up exists anywhere.** Attempting to access any `pages/*.php` URL directly while not logged in results in an immediate redirect to the login page.
+* "Our first core feature is our secure login module, styled with a modern dual-pane layout."
+* "Behind the scenes, we use PHP sessions to securely route users. When a user submits credentials, the backend queries the MySQL database using a PDO Prepared Statement to prevent SQL injection."
+* "If verified, user roles and Client IDs are saved in session variables. Protected portal pages use our authentication guard to block unauthorized direct URL access."
 
 ---
 
-## Slide 9 — Core Feature 2: Management Dashboard (Admin)
-**Heading:** Supplier / Provider Catalog Management
+## Slide 9: Core Feature 2 – Management Dashboard (Admin)
+**Slide Heading:** Supplier / Provider Catalog Management
 
 ### What to Display
-- Screenshot of `pages/dashboard.php` (Admin view) showing KPI cards
-- Screenshot of `pages/tickets.php` or `pages/users.php` showing the DataTables table
-- Screenshot of a Bootstrap Modal for adding/editing a record
+- **Visuals:** Screenshot of `pages/dashboard.php` (Admin View) with KPI counter cards, and `pages/sla_contracts.php`.
+- **Key Modules Highlighted:**
+  - **Live Counters:** Displays active tickets, critical alerts, and total onboarded clients.
+  - **SLA Contract Management:** Displays active service tiers, monthly hours, and response guarantees.
+  - **JavaScript Search & Filtering:** Showcases rapid live tables with text search and dropdown filters.
+  - **Modals for Actions:** Shows Bootstrap modals for adding or editing items without page redirects.
 
 ### Talking Points
-- The Admin dashboard (`pages/dashboard.php`) provides a **multi-column KPI overview**: total open tickets, critical ticket count, clients with SLA contracts, and maintenance hours consumed this month — all computed live from the database via SQL queries.
-- **`pages/tickets.php`** is the Admin's primary work queue — a filterable, sortable table of all tickets across all clients. Key features:
-  - **DataTables.js integration:** Adds client-side search box, column sorting, and pagination to the Bootstrap table with zero additional code
-  - **Priority badges:** Color-coded using Bootstrap badge classes — red for Critical, yellow for High, green for Low — for instant visual triage
-  - **Status filter dropdown:** Admin can filter by `open`, `in_progress`, `resolved`, or `closed` without a page reload
-- **Bootstrap Modals** are used throughout the admin panel for CRUD operations (e.g., creating users, editing SLA contracts) so the admin never navigates away from their current list view.
-- **`pages/users.php`** and **`pages/clients.php`** are Admin-exclusive pages (`guardRole('admin')` is enforced at the top of each).
+* "Slide 9 shows our Provider Management Dashboard, which functions as the service catalog and control panel."
+* "From here, admins can track total open issues and manage active client SLAs. We integrated client-side search filters so admins can filter lists by keyword, role, or status instantly."
+* "By utilizing contextual Bootstrap modals, admins can add new service contracts or update details without ever leaving the page they are working on."
 
 ---
 
-## Slide 10 — Core Feature 3: Ordering & Request Portal (Client)
-**Heading:** Client Procurement Interface
+## Slide 10: Core Feature 3 – Ordering & Request Portal (Client)
+**Slide Heading:** Client Procurement Interface
 
 ### What to Display
-- Screenshot of `pages/ticket_create.php` (the client's ticket submission form)
-- Screenshot of `pages/tickets.php` filtered to the client's own tickets
+- **Visuals:** Screenshot of `pages/ticket_create.php` and the client's dashboard overview.
+- **Session-Based Isolation Logic:**
+  - Form fields: Subject, Description, SLA Priority (Low, High, Critical).
+  - Submits to `api/tickets/create.php`.
+  - Client ID is resolved directly from `$_SESSION['client_id']`, rendering client-side spoofing impossible.
+  - Live SLA widget displays hours remaining vs. monthly pool (pulled from `v_sla_usage`).
 
 ### Talking Points
-- Clients access a **filtered view** of the portal — they can only see their own tickets, their own SLA usage, and their own reports. The filtering is applied server-side based on `$_SESSION['user_id']`.
-- **Ticket submission (`pages/ticket_create.php`):**
-  - Client fills in: Subject, Description, and Priority (`low` / `high` / `critical`)
-  - On submit, the form POSTs to `api/tickets/create.php`
-  - The API validates inputs, then inserts a new row into `tickets` with `status = 'open'` and `client_id` derived from the session
-  - A corresponding first entry is auto-inserted into `ticket_activities` to start the audit trail
-- **Session-based data isolation:** Because `$_SESSION['user_id']` is verified server-side on every API call, a client cannot view or modify another client's tickets — even by manipulating URL parameters. The query always includes a `WHERE client_id = ?` clause tied to the session.
-- The client's dashboard shows their current SLA usage (hours consumed vs. pool) computed live from `v_sla_usage`.
+* "The Client Portal serves as the client procurement interface. Here, client offices can request IT support services by filing tickets."
+* "When submitting a ticket, the priority is defined based on business impact. The backend resolves the client's identity strictly from their active PHP session."
+* "This prevents security vulnerabilities like ID tampering. Clients can also check their remaining monthly support allocation directly on their dashboard widget."
 
 ---
 
-## Slide 11 — Core Feature 4: Backend Transaction Automation
-**Heading:** Automated Status Synchronization
+## Slide 11: Core Feature 4 – Backend Transaction Automation
+**Slide Heading:** Automated Status Synchronization
 
 ### What to Display
-- Screenshot of `pages/ticket_view.php` showing the status update controls
-- Screenshot of the Activity Trail section below a ticket
+- **Visuals:** Screenshot of `pages/ticket_view.php` showing the status change dropdown and the completed activity trail.
+- **PHP/MySQL Automation Logic:**
+  - **Status Updates:** Updating status to `resolved` runs `UPDATE tickets SET status = 'resolved', resolved_at = NOW() WHERE id = ?`.
+  - **Audit Logs:** Simultaneously inserts a tracking record to the `ticket_activities` table.
+  - **SLA Hours Calculation:** Logging maintenance in `api/maintenance/create.php` updates `maintenance_logs`.
+  - Since `v_sla_usage` computes aggregates on-the-fly, the client's remaining hours pool updates automatically.
 
 ### Talking Points
-- When the Admin updates a ticket's status, the backend in `api/tickets/update.php` performs **two atomic operations** in sequence:
-  1. **UPDATE** the `tickets` table: sets the new `status` and, if status is `'resolved'`, sets `resolved_at = NOW()`
-  2. **INSERT** a new row into `ticket_activities`: records who changed it, what the change was, and when — building the full audit trail
-- **Why `resolved_at` matters:** This timestamp is used by the `v_monthly_report` VIEW to calculate `avg_response_hrs` (average resolution time) and detect `sla_breaches` (tickets resolved after the contract's `response_time_hrs` limit).
-- **SLA hour deduction is fully automated** via the database VIEW approach (3NF design):
-  - When Admin logs a maintenance entry in `api/maintenance/create.php`, `hours_spent` is recorded in `maintenance_logs`
-  - The `v_sla_usage` VIEW then automatically aggregates all `hours_spent` values for that client, computing `hours_used` and `hours_remaining` live — no manual update query needed
-- This eliminates the risk of desynchronized data: the SLA pool figures are always mathematically correct because they are computed, not stored.
+* "Whenever a ticket's status is updated, our backend automates two distinct operations."
+* "First, it updates the ticket status and sets a resolution timestamp. Second, it inserts an audit log into our ticket activities trail, recording who made the change, when, and any notes."
+* "Furthermore, when an admin logs maintenance hours, our database view automatically updates the client's remaining contract pool. This removes the risk of data desynchronization."
 
 ---
 
-## Slide 12 — Core Feature 5: Professional Document Generation
-**Heading:** Dynamic Invoice / Manifest Generation
+## Slide 12: Core Feature 5 – Professional Document Generation
+**Slide Heading:** Dynamic Invoice / Manifest Generation
 
 ### What to Display
-- Screenshot of `pages/reports.php` showing a generated monthly report
-- Highlight the print-ready layout
+- **Visuals:** Screenshot of the printable Monthly Performance Report overlay in `pages/reports.php`.
+- **Dynamic Report Processing:**
+  - Queries `v_monthly_report` using the selected client, month, and year.
+  - Computes: Total Tickets, Resolution Rate, SLA breaches, and Compliance Percentage.
+- **Print Optimization (`window.print()`):**
+  - Styled with CSS `@media print` rules.
+  - Hides sidebars, headers, and action buttons during printing to output a clean, paper-ready PDF manifest.
 
 ### Talking Points
-- **Monthly Service Report generation (`pages/reports.php`):**
-  - Admin selects a client and a month/year, then clicks "Generate Report"
-  - The form POSTs to `api/reports/generate.php`, which:
-    1. Checks if a report record already exists for that client+month (`UNIQUE KEY uq_report_per_month`)
-    2. If not, inserts a new record into `reports` (metadata only: who generated it, when)
-    3. Returns the live-computed figures from `v_monthly_report` as JSON
-  - The report page then dynamically renders the full report: total tickets, resolved count, SLA compliance %, average response time, hours used, site visits used
-- **Dynamic data pull:** PHP uses the `report_id` (Transaction ID equivalent) to query `v_monthly_report WHERE report_id = ?`, ensuring each report always shows the correct month's figures for the correct client.
-- **Desktop printing:** The report layout is designed for `window.print()` — a "Print Report" button triggers the browser's native print dialog, producing a clean, professional PDF-ready document ready for client delivery.
+* "Slide 12 showcases our document generation system. For IT firms, the monthly report serves as a service manifest."
+* "The admin chooses the month, and PHP queries our `v_monthly_report` view to aggregate all ticket actions, response times, and compliance metrics into a single layout."
+* "We implemented custom print CSS stylesheets. When the user clicks print, the browser hides all navigation menus and formats the document into a clean, professional PDF receipt ready for delivery."
 
 ---
 
-## Slide 13 — Core Feature 6: Administrative Analytics
-**Heading:** Executive Data Visualization
+## Slide 13: Core Feature 6 – Administrative Analytics
+**Slide Heading:** Executive Data Visualization
 
 ### What to Display
-- Screenshot of `pages/reports.php` showing the two Chart.js charts
-- Point out `resolutionChart` and `peakDaysChart` canvas elements
+- **Visuals:** Screenshot of the dual Chart.js visualizations on the Admin's report page.
+- **Chart Implementations:**
+  - `resolutionChart` (Bar Chart): Tracks average resolution time in hours over the months of the year.
+  - `peakDaysChart` (Bar Chart): Aggregates ticket submissions by day of the week (Monday–Sunday) to track busy periods.
+- **Database Aggregation:** Data is grouped using SQL `GROUP BY MONTH()` and `GROUP BY DAYOFWEEK()`, then passed directly into Chart.js configs.
 
 ### Talking Points
-- The reports page includes **two Chart.js bar charts** implemented in `public/js/charts.js`:
-  1. **Average Ticket Resolution Time** (`resolutionChart`) — a bar chart showing average hours to resolve tickets per month, helping the Admin track whether the team is improving or slowing down
-  2. **Peak Support Request Days** (`peakDaysChart`) — a bar chart showing which days of the week receive the most ticket submissions, enabling the Admin to schedule technicians proactively
-- **Data aggregation:** The chart data is pulled from the database via SQL aggregation queries:
-  - Resolution time: `AVG(TIMESTAMPDIFF(HOUR, created_at, resolved_at))` grouped by month
-  - Peak days: `COUNT(id)` grouped by `DAYOFWEEK(created_at)`
-- **Chart.js integration:** `public/js/charts.js` initializes both charts using the `Chart` constructor on `<canvas>` elements. The data arrays passed to Chart.js are populated by PHP echoing the query results as JavaScript variables before the script runs.
-- This gives the Admin **executive-level visibility** — they can present these charts directly to clients during service review meetings to demonstrate SLA compliance.
+* "To give managers executive-level insight, we built interactive data visualizations using Chart.js."
+* "We showcase two critical charts: one tracking monthly average resolution times, and another displaying support requests by weekday."
+* "This is computed using SQL aggregation queries. Managers can see exactly when support requests peak, allowing them to schedule technician shifts proactively and reduce SLA response breaches."
 
 ---
 
-## Slide 14 — System Security & Data Integrity
-**Heading:** Security Measures Implemented
+## Slide 14: System Security & Data Integrity
+**Slide Heading:** Security Measures Implemented
 
 ### What to Display
-- Code snippet of a PDO Prepared Statement (from `api/auth/login.php`)
-- Code snippet of `includes/auth.php` session validation
+* **Our Four Security Pillars:**
+  1. 🛡️ **PDO Prepared Statements:** Prevents SQL Injection by binding variables separately from the query structure.
+  2. 🛡️ **PHP Session Validation:** Restricts directory traversal. Unauthenticated requests are rejected by `includes/auth.php`.
+  3. 🛡️ **Role-Based Guards:** Prevents privilege escalation by checking `$_SESSION['role'] === 'admin'` before loading sensitive pages.
+  4. 🛡️ **Bcrypt Password Hashing:** Secures credentials via PHP's `password_hash()` and `password_verify()`. No plain-text passwords exist.
+  5. 🛡️ **Directory Protection (`.htaccess`):** Denies direct URL access to the `api/`, `includes/`, and `sql/` folders.
 
 ### Talking Points
-The system implements four layers of security:
-
-#### 1. Prepared Statements — SQL Injection Prevention
-All database queries use **PDO Prepared Statements**. User input is **never** concatenated directly into an SQL string. Example:
-```php
-$stmt = $pdo->prepare("SELECT * FROM users WHERE email = ? AND is_active = 1");
-$stmt->execute([$email]);
-```
-This means even if a user types `' OR 1=1 --` into the email field, it is treated as literal text — not executable SQL.
-
-#### 2. Session Validation — Unauthorized URL Access Prevention
-Every portal page begins with `require '../includes/auth.php'`, which checks `$_SESSION['user_id']`. Typing a URL like `http://localhost/TechniServe/pages/users.php` directly while not logged in immediately redirects to `login.php`.
-
-#### 3. Role-Based URL Guard — Privilege Escalation Prevention
-Admin-only pages call `guardRole('admin')`. If a logged-in client attempts to access an admin URL directly, they are redirected to their own dashboard or receive a 403 Forbidden response on API endpoints.
-
-#### 4. Password Hashing — Credential Security
-Passwords are stored using PHP's `password_hash($plain, PASSWORD_BCRYPT)` and verified with `password_verify()`. Plain-text passwords are never stored or logged anywhere.
-
-#### 5. .htaccess Protection
-The `.htaccess` file blocks direct browser access to `includes/`, `sql/`, and `api/` directories, preventing raw PHP files and SQL schema files from being accessed via URL.
+* "Security is a core focus in enterprise software. We implemented four layers of protection to secure our data."
+* "First, we prevent SQL injection by using PDO Prepared Statements. Second, session checks block unauthenticated URL access. Third, role-based guards stop clients from accessing admin pages."
+* "Finally, passwords are encrypted using Bcrypt, and our `.htaccess` configuration blocks direct browser access to backend source code directories."
 
 ---
 
-## Slide 15 — Conclusion & Future Enhancements
-**Heading:** Project Summary & Next Steps
+## Slide 15: Conclusion & Future Enhancements
+**Slide Heading:** Project Summary & Next Steps
 
 ### What to Display
-- Summary checklist of completed features
-- Future roadmap bullets
+* **System Achievements (6-Week Timeline):**
+  * Completed fully secure role-based authentication.
+  * Designed a normalized 3NF database layout with computed views.
+  * Deployed a responsive, PC-optimized dashboard with search, filter, and modal interfaces.
+  * Integrated Chart.js analytics and print-ready report document generation.
+* **Future Roadmap (Scale Up):**
+  * 📱 **SMS/Email Notifications:** Auto-notify clients of ticket status changes (via Twilio or PHPMailer).
+  * 💬 **Real-time Live Chat:** Real-time communications between client and admin via WebSockets.
+  * 📡 **API Service Layer:** Expose RESTful endpoints for mobile technician applications.
+  * ☁️ **Cloud Deployment:** Migration to cloud host with cron jobs for automated monthly reports.
 
-### What Was Achieved (6-Week Timeline)
-
-| ✅ Feature | Description |
-|---|---|
-| Multi-Role Authentication | Secure PHP session login with RBAC for Admin and Client |
-| SLA Contract Management | Full CRUD for SLA terms with automatic usage tracking via SQL VIEWs |
-| Support Ticket Routing | Priority-based (Low/High/Critical) ticket lifecycle with full activity audit trail |
-| Automated Maintenance Logging | Maintenance activities auto-deduct from client SLA hours pool |
-| Monthly Report Generation | Live-computed SLA compliance reports with print functionality |
-| Chart.js Analytics | Resolution time trends and peak request day visualization |
-| 3NF Database Design | 8-table normalized schema with 2 computed VIEWs replacing derived columns |
-| Lead Capture System | Public landing page form feeding an admin-reviewed approval queue |
-
-### Future Enhancements (If Scaled Up)
-
-- 📱 **SMS/Email Notifications** — Automatically notify clients when their ticket status changes using Twilio or PHPMailer
-- 💬 **Live In-App Chat** — Real-time client-to-admin messaging via WebSockets for faster issue triage
-- 📡 **REST API Layer** — Expose endpoints for mobile app integration so technicians can update ticket statuses from the field
-- 📊 **Advanced Analytics Dashboard** — Predictive SLA breach alerts, per-client uptime scoring, and exportable CSV reports
-- 🔐 **Two-Factor Authentication (2FA)** — Add an OTP layer for admin logins to protect against credential theft
-- ☁️ **Cloud Deployment Upgrade** — Migrate from AwardSpace free tier to AWS or DigitalOcean for guaranteed uptime and cron job support (enabling automated monthly report emails)
-
-### Closing Statement
-> *"TechniServe transforms a phone-and-spreadsheet IT support workflow into a structured, secure, and data-driven B2B platform — giving IT providers the tools to deliver accountable, SLA-compliant service at scale."*
-
----
-
-*Document prepared by: Alamo, Avryl Raven A. — Project Manager / Lead Analyst*
-*TechniServe | IT Managed Services & SLA Portal | 2026*
+### Talking Points
+* "In conclusion, over our 6-week development cycle, our team delivered a fully operational B2B IT support portal."
+* "We successfully built the normalized database, multi-role authentication, automated ticket flows, SLA monitoring, and data analytics."
+* "Looking forward, our roadmap includes integrating live SMS alerts, building in-app chat via WebSockets, and exposing REST APIs to support mobile apps for field technicians."
+* "Thank you, and we are now open to any questions you may have."
