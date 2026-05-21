@@ -391,7 +391,7 @@
 
             <!-- Success message (hidden until form submitted) -->
             <div id="form-success" role="status">
-                <img src="public/assets/images/babad74a-3340-4104-94e2-68abbdd484a6.jpg" width="100" height="100" alt="Request sent successfully" class="success-image">
+                <img src="public/assets/images/check.png" width="100" height="100" alt="Request sent successfully" class="success-image">
                 <h4>Request Sent!</h4>
                 <p>Thank you! We'll review your request and contact you within 24 hours.</p>
             </div>

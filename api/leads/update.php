@@ -84,7 +84,7 @@ try {
     
     $action = ucfirst($status);
     $extraMsg = ($status === 'approved') ? " User account, Client profile, and SLA Contract auto-generated." : "";
-    echo json_encode(['success' => true, 'message' => "Lead has been {$action}d.{$extraMsg}"]);
+    echo json_encode(['success' => true, 'message' => "Lead has been {$action}.{$extraMsg}"]);
 
 } catch (Exception $e) {
     if ($pdo->inTransaction()) {
