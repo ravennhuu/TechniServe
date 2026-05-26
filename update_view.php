@@ -13,25 +13,25 @@ SELECT
   r.generated_at,
 
   COUNT(t.id)                                                       AS total_tickets,
-  SUM(CASE WHEN t.status = 'resolved'   THEN 1 ELSE 0 END)         AS resolved_tickets,
-  SUM(CASE WHEN t.status = 'closed'     THEN 1 ELSE 0 END)         AS closed_tickets,
+  SUM(CASE WHEN t.status IN ('resolved', 'closed') THEN 1 ELSE 0 END) AS resolved_tickets,
+  SUM(CASE WHEN t.status IN ('resolved', 'closed') THEN 1 ELSE 0 END) AS closed_tickets,
   SUM(CASE WHEN t.priority = 'critical' THEN 1 ELSE 0 END)         AS critical_count,
   SUM(CASE WHEN t.priority = 'high'     THEN 1 ELSE 0 END)         AS high_count,
   SUM(CASE WHEN t.priority = 'low'      THEN 1 ELSE 0 END)         AS low_count,
 
   SUM(CASE
-    WHEN t.status = 'resolved'
-     AND TIMESTAMPDIFF(HOUR, t.created_at, t.resolved_at) > sc.response_time_hrs
+    WHEN t.status IN ('resolved', 'closed')
+     AND TIMESTAMPDIFF(SECOND, t.created_at, t.resolved_at) > sc.response_time_hrs * 3600
     THEN 1 ELSE 0
   END)                                                              AS sla_breaches,
 
   ROUND(
-    SUM(CASE WHEN t.status = 'resolved' THEN 1 ELSE 0 END)
+    SUM(CASE WHEN t.status IN ('resolved', 'closed') THEN 1 ELSE 0 END)
     / NULLIF(COUNT(t.id), 0) * 100, 2
   )                                                                 AS compliance_pct,
 
   ROUND(
-    AVG(TIMESTAMPDIFF(HOUR, t.created_at, t.resolved_at)), 2
+    AVG(TIMESTAMPDIFF(SECOND, t.created_at, t.resolved_at)) / 3600, 2
   )                                                                 AS avg_response_hrs,
 
   COALESCE(SUM(ml.hours_spent), 0)                                  AS hours_used,

@@ -87,8 +87,8 @@ require '../includes/header.php';
                             elseif (strtotime($contract['end_date']) < strtotime('+30 days')) $status = 'expiring';
 
                             function getPlanNameProfile($hours) {
-                                if ($hours <= 20) return 'Basic';
-                                if ($hours <= 50) return 'Professional';
+                                if ($hours < 20) return 'Basic';
+                                if ($hours < 40) return 'Professional';
                                 return 'Enterprise';
                             }
                             $plan = getPlanNameProfile($contract['monthly_hours_pool']);

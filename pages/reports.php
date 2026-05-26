@@ -10,15 +10,34 @@ try {
         // Overall stats for admin
         $stmt = $pdo->prepare("SELECT AVG(compliance_pct) FROM v_monthly_report");
         $stmt->execute();
-        $overall_compliance = round($stmt->fetchColumn() ?? 100, 1) . '%';
+        $compliance_val = $stmt->fetchColumn();
+        $overall_compliance = $compliance_val === null ? '0%' : round($compliance_val, 1) . '%';
 
         $stmt = $pdo->prepare("SELECT AVG(avg_response_hrs) FROM v_monthly_report");
         $stmt->execute();
-        $avg_resolution = round($stmt->fetchColumn() ?? 0, 1) . 'h';
+        $res_val = $stmt->fetchColumn();
+        $avg_resolution = $res_val === null ? '0h' : round($res_val, 2) . 'h';
 
         $stmt = $pdo->prepare("SELECT SUM(total_tickets) FROM v_monthly_report");
         $stmt->execute();
         $total_tickets = $stmt->fetchColumn() ?? 0;
+        
+        $stmt = $pdo->prepare("
+            SELECT
+                COUNT(*) AS total_done,
+                SUM(CASE WHEN DATE(COALESCE(resolved_at, updated_at)) = DATE(created_at) THEN 1 ELSE 0 END) AS same_day
+            FROM tickets
+            WHERE status IN ('resolved','closed')
+        ");
+        $stmt->execute();
+        $fcr_row = $stmt->fetch();
+        $fcr_rate = ($fcr_row && $fcr_row['total_done'] > 0)
+            ? round($fcr_row['same_day'] / $fcr_row['total_done'] * 100) . '%'
+            : '0%';
+        
+        $compliance_trend = $compliance_val === null ? 'No data yet' : '↑ On track';
+        $res_trend = $res_val === null ? 'No data yet' : 'System average';
+        $fcr_trend = $total_tickets > 0 ? '↑ Strong performance' : 'No data yet';
 
         $stmt = $pdo->prepare("
             SELECT *
@@ -30,10 +49,13 @@ try {
 
         // Chart Data: Avg Resolution by Month (Admin)
         $stmt = $pdo->prepare("
-            SELECT MONTH(resolved_at) as m, AVG(TIMESTAMPDIFF(HOUR, created_at, resolved_at)) as avg_hrs
-            FROM tickets 
-            WHERE resolved_at IS NOT NULL AND YEAR(resolved_at) = YEAR(CURDATE())
-            GROUP BY MONTH(resolved_at)
+            SELECT
+                MONTH(COALESCE(resolved_at, updated_at)) AS m,
+                AVG(TIMESTAMPDIFF(SECOND, created_at, COALESCE(resolved_at, updated_at))) / 3600 AS avg_hrs
+            FROM tickets
+            WHERE status IN ('resolved','closed')
+              AND YEAR(COALESCE(resolved_at, updated_at)) = YEAR(CURDATE())
+            GROUP BY MONTH(COALESCE(resolved_at, updated_at))
         ");
         $stmt->execute();
         $chart_res_data = $stmt->fetchAll();
@@ -54,15 +76,34 @@ try {
         
         $stmt = $pdo->prepare("SELECT AVG(compliance_pct) FROM v_monthly_report WHERE client_id = ?");
         $stmt->execute([$client_id]);
-        $overall_compliance = round($stmt->fetchColumn() ?? 100, 1) . '%';
+        $compliance_val = $stmt->fetchColumn();
+        $overall_compliance = $compliance_val === null ? '0%' : round($compliance_val, 1) . '%';
 
         $stmt = $pdo->prepare("SELECT AVG(avg_response_hrs) FROM v_monthly_report WHERE client_id = ?");
         $stmt->execute([$client_id]);
-        $avg_resolution = round($stmt->fetchColumn() ?? 0, 1) . 'h';
+        $res_val = $stmt->fetchColumn();
+        $avg_resolution = $res_val === null ? '0h' : round($res_val, 2) . 'h';
 
         $stmt = $pdo->prepare("SELECT SUM(total_tickets) FROM v_monthly_report WHERE client_id = ?");
         $stmt->execute([$client_id]);
         $total_tickets = $stmt->fetchColumn() ?? 0;
+        
+        $stmt = $pdo->prepare("
+            SELECT
+                COUNT(*) AS total_done,
+                SUM(CASE WHEN DATE(COALESCE(resolved_at, updated_at)) = DATE(created_at) THEN 1 ELSE 0 END) AS same_day
+            FROM tickets
+            WHERE status IN ('resolved','closed') AND client_id = ?
+        ");
+        $stmt->execute([$client_id]);
+        $fcr_row = $stmt->fetch();
+        $fcr_rate = ($fcr_row && $fcr_row['total_done'] > 0)
+            ? round($fcr_row['same_day'] / $fcr_row['total_done'] * 100) . '%'
+            : '0%';
+        
+        $compliance_trend = $compliance_val === null ? 'No data yet' : '↑ On track';
+        $res_trend = $res_val === null ? 'No data yet' : 'System average';
+        $fcr_trend = $total_tickets > 0 ? '↑ Strong performance' : 'No data yet';
 
         // History
         $stmt = $pdo->prepare("
@@ -76,10 +117,14 @@ try {
 
         // Chart Data: Avg Resolution by Month (Client)
         $stmt = $pdo->prepare("
-            SELECT MONTH(resolved_at) as m, AVG(TIMESTAMPDIFF(HOUR, created_at, resolved_at)) as avg_hrs
-            FROM tickets 
-            WHERE resolved_at IS NOT NULL AND YEAR(resolved_at) = YEAR(CURDATE()) AND client_id = ?
-            GROUP BY MONTH(resolved_at)
+            SELECT
+                MONTH(COALESCE(resolved_at, updated_at)) AS m,
+                AVG(TIMESTAMPDIFF(SECOND, created_at, COALESCE(resolved_at, updated_at))) / 3600 AS avg_hrs
+            FROM tickets
+            WHERE status IN ('resolved','closed')
+              AND client_id = ?
+              AND YEAR(COALESCE(resolved_at, updated_at)) = YEAR(CURDATE())
+            GROUP BY MONTH(COALESCE(resolved_at, updated_at))
         ");
         $stmt->execute([$client_id]);
         $chart_res_data = $stmt->fetchAll();
@@ -98,6 +143,10 @@ try {
     $overall_compliance = '0%';
     $avg_resolution = '0h';
     $total_tickets = 0;
+    $fcr_rate = '0%';
+    $compliance_trend = 'No data yet';
+    $res_trend = 'No data yet';
+    $fcr_trend = 'No data yet';
     $history = [];
     $chart_res_data = [];
     $chart_days_data = [];
@@ -106,7 +155,7 @@ try {
 // Process Chart Data
 $chart_res = array_fill(1, 12, 0);
 foreach ($chart_res_data as $row) {
-    $chart_res[$row['m']] = round($row['avg_hrs'], 1);
+    $chart_res[$row['m']] = round($row['avg_hrs'], 2);
 }
 $res_values = array_values($chart_res);
 
@@ -154,7 +203,7 @@ function getMonthName($n) {
             <div class="kpi-data">
                 <div class="kpi-value"><?php echo $overall_compliance; ?></div>
                 <div class="kpi-label">SLA Compliance Rate</div>
-                <div class="kpi-trend up">↑ On track</div>
+                <div class="kpi-trend <?php echo strpos($compliance_trend, '↑') !== false ? 'up' : ''; ?>"><?php echo $compliance_trend; ?></div>
             </div>
         </div>
     </div>
@@ -166,7 +215,7 @@ function getMonthName($n) {
             <div class="kpi-data">
                 <div class="kpi-value"><?php echo $avg_resolution; ?></div>
                 <div class="kpi-label">Avg. Resolution Time</div>
-                <div class="kpi-trend">System average</div>
+                <div class="kpi-trend"><?php echo $res_trend; ?></div>
             </div>
         </div>
     </div>
@@ -188,9 +237,9 @@ function getMonthName($n) {
                 <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             </div>
             <div class="kpi-data">
-                <div class="kpi-value">94%</div>
+                <div class="kpi-value"><?php echo $fcr_rate; ?></div>
                 <div class="kpi-label">First-Contact Resolution</div>
-                <div class="kpi-trend up">↑ Strong performance</div>
+                <div class="kpi-trend <?php echo strpos($fcr_trend, '↑') !== false ? 'up' : ''; ?>"><?php echo $fcr_trend; ?></div>
             </div>
         </div>
     </div>
@@ -254,7 +303,7 @@ function getMonthName($n) {
                     <td class="text-muted-ts"><?php echo htmlspecialchars($r['company_name']); ?></td>
                     <td><?php echo $r['total_tickets']; ?></td>
                     <td><?php echo $r['resolved_tickets']; ?></td>
-                    <td><?php echo $r['avg_response_hrs'] ? number_format($r['avg_response_hrs'], 1) . 'h' : '—'; ?></td>
+                    <td><?php echo $r['avg_response_hrs'] ? number_format($r['avg_response_hrs'], 2) . 'h' : '—'; ?></td>
                     <td>
                         <?php if ($r['compliance_pct'] >= 95): ?>
                         <span class="ts-badge badge-resolved">Compliant <?php echo $r['compliance_pct']; ?>%</span>
@@ -530,7 +579,7 @@ function showReportOutput(data, month, year) {
                 <td class="text-center" style="padding:1rem;">${r.closed_tickets !== undefined ? r.closed_tickets : 0}</td>
                 <td class="text-center" style="padding:1rem;${r.sla_breaches > 0 ? 'color:var(--critical);font-weight:600;' : ''}">${r.sla_breaches}</td>
                 <td class="text-center" style="padding:1rem;${complianceColor}">${r.compliance_pct}%</td>
-                <td class="text-center" style="padding:1rem;">${r.avg_response_hrs ? Number(r.avg_response_hrs).toFixed(1) + 'h' : '—'}</td>
+                <td class="text-center" style="padding:1rem;">${r.avg_response_hrs ? Number(r.avg_response_hrs).toFixed(2) + 'h' : '—'}</td>
             `;
             tbody.appendChild(tr);
         });

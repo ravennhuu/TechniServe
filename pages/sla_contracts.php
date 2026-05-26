@@ -34,8 +34,8 @@ try {
 $s_map = ['active'=>'badge-resolved','expiring'=>'badge-high','expired'=>'badge-closed','inactive'=>'badge-silver'];
 
 function getPlanName($hours) {
-    if ($hours <= 20) return 'Basic';
-    if ($hours <= 50) return 'Professional';
+    if ($hours < 20) return 'Basic';
+    if ($hours < 40) return 'Professional';
     return 'Enterprise';
 }
 $p_map = ['Enterprise'=>'badge-navy','Professional'=>'badge-in-progress','Basic'=>'badge-silver'];

@@ -61,7 +61,7 @@ try {
                     <input type="hidden" name="id" value="<?php echo $ticket['id']; ?>">
                     
                     <div class="row g-3">
-                        <div class="col-sm-6">
+                        <div class="col-sm-4">
                             <div class="ts-form-group">
                                 <label class="ts-form-label" for="ticketStatus">
                                     Status <span class="required-star">*</span>
@@ -74,7 +74,7 @@ try {
                                 </select>
                             </div>
                         </div>
-                        <div class="col-sm-6">
+                        <div class="col-sm-4">
                             <div class="ts-form-group">
                                 <label class="ts-form-label" for="ticketPriority">Priority</label>
                                 <select id="ticketPriority" name="priority" class="ts-form-control ts-form-select">
@@ -82,6 +82,14 @@ try {
                                     <option value="high" <?php if($ticket['priority'] == 'high') echo 'selected'; ?>>🟠 High</option>
                                     <option value="low" <?php if($ticket['priority'] == 'low') echo 'selected'; ?>>🟢 Low</option>
                                 </select>
+                            </div>
+                        </div>
+                        <div class="col-sm-4" id="slaDeductionContainer" style="<?php echo in_array($ticket['status'], ['closed', 'resolved']) ? '' : 'display:none;'; ?>">
+                            <div class="ts-form-group">
+                                <label class="ts-form-label" for="slaDeduction">
+                                    SLA Deduction (Hours)
+                                </label>
+                                <input type="number" id="slaDeduction" name="sla_deduction" class="ts-form-control" step="0.5" min="0" placeholder="e.g. 1.5">
                             </div>
                         </div>
                     </div>
@@ -143,6 +151,16 @@ submitFormAjax('#editTicketForm', {
             showError('Note Required', 'Please provide an update message before saving.');
             return false;
         }
+    }
+});
+
+document.getElementById('ticketStatus').addEventListener('change', function() {
+    var container = document.getElementById('slaDeductionContainer');
+    if (this.value === 'closed' || this.value === 'resolved') {
+        container.style.display = 'block';
+    } else {
+        container.style.display = 'none';
+        document.getElementById('slaDeduction').value = '';
     }
 });
 </script>

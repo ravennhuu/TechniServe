@@ -43,7 +43,7 @@ try {
     } else {
         // All logs for admin
         $stmt = $pdo->prepare("
-            SELECT m.*, c.company_name as client, u.name as technician
+            SELECT m.*, c.id as client_id, c.company_name as client, u.name as technician
             FROM maintenance_logs m
             JOIN tickets t ON m.ticket_id = t.id
             JOIN clients c ON t.client_id = c.id
@@ -59,6 +59,10 @@ try {
         $pool = $stmt->fetch();
         $pool_total = $pool['total'] ?? 0;
         $pool_used = $pool['used'] ?? 0;
+
+        // Fetch all clients for filter dropdown
+        $cstmt = $pdo->query("SELECT id, company_name FROM clients ORDER BY company_name ASC");
+        $all_clients = $cstmt->fetchAll();
     }
 } catch (PDOException $e) {
     $logs = [];
@@ -131,6 +135,14 @@ $s_map = ['completed'=>'badge-resolved','scheduled'=>'badge-open','cancelled'=>'
         <svg class="search-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
         <input type="text" id="maintenanceSearch" class="ts-form-control" placeholder="Search logs…">
     </div>
+    <?php if (!$is_client): ?>
+    <select id="filterMaintenanceClient" class="ts-form-control ts-form-select">
+        <option value="">All Clients</option>
+        <?php foreach ($all_clients as $c): ?>
+            <option value="<?php echo $c['id']; ?>"><?php echo htmlspecialchars($c['company_name']); ?></option>
+        <?php endforeach; ?>
+    </select>
+    <?php endif; ?>
     <select id="filterMaintenanceStatus" class="ts-form-control ts-form-select">
         <option value="">All Statuses</option>
         <option value="completed">Completed</option>
@@ -154,7 +166,7 @@ $s_map = ['completed'=>'badge-resolved','scheduled'=>'badge-open','cancelled'=>'
             </thead>
             <tbody>
                 <?php foreach ($logs as $log): ?>
-                <tr>
+                <tr data-client-id="<?php echo isset($log['client_id']) ? $log['client_id'] : ''; ?>">
                     <td>
                         <div style="font-weight:700; color:var(--navy-deepest);">#<?php echo $log['id']; ?></div>
                         <div style="font-size:0.75rem; color:var(--text-muted); white-space:nowrap;"><?php echo date('M d, Y', strtotime($log['created_at'])); ?></div>

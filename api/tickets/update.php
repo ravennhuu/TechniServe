@@ -2,12 +2,14 @@
 // api/tickets/update.php
 require_once '../../includes/auth.php';
 require_once '../../includes/db.php';
+require_once '../../includes/functions.php';
 header('Content-Type: application/json');
 
 $id       = $_POST['id']       ?? null;
 $status   = $_POST['status']   ?? null;
 $priority = $_POST['priority'] ?? null;
-$note     = trim($_POST['note'] ?? '');
+$note          = trim($_POST['note'] ?? '');
+$sla_deduction = isset($_POST['sla_deduction']) ? (float)$_POST['sla_deduction'] : 0;
 
 if (!$id) {
     echo json_encode(['success' => false, 'message' => 'Ticket ID is required.']);
@@ -50,8 +52,8 @@ try {
     if ($status) {
         $updates[] = "status = ?";
         $params[]  = $status;
-        if ($status === 'resolved') {
-            $updates[] = "resolved_at = NOW()";
+        if ($status === 'resolved' || $status === 'closed') {
+            $updates[] = "resolved_at = COALESCE(resolved_at, NOW())";
         }
     }
     if ($priority && $_SESSION['role'] === 'admin') {
@@ -76,6 +78,18 @@ try {
         
         $stmt = $pdo->prepare("INSERT INTO ticket_activities (ticket_id, user_id, action, note) VALUES (?, ?, ?, ?)");
         $stmt->execute([$id, $_SESSION['user_id'], $action, $note]);
+
+        // Add SLA deduction if provided
+        if ($sla_deduction > 0 && $_SESSION['role'] === 'admin' && in_array($status, ['closed', 'resolved'])) {
+            $stmt_t = $pdo->prepare("SELECT client_id FROM tickets WHERE id = ?");
+            $stmt_t->execute([$id]);
+            $ticket_data = $stmt_t->fetch();
+            $client_id = $ticket_data ? $ticket_data['client_id'] : null;
+
+            if ($client_id) {
+                deductSLAHours($pdo, $client_id, $sla_deduction, $id, $_SESSION['user_id'], $note);
+            }
+        }
     } elseif (!empty($note)) {
         // Just add a note/activity
         $stmt = $pdo->prepare("INSERT INTO ticket_activities (ticket_id, user_id, action, note) VALUES (?, ?, ?, ?)");

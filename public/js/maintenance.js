@@ -4,26 +4,31 @@
 document.addEventListener('DOMContentLoaded', function () {
     var search = document.getElementById('maintenanceSearch');
     var status = document.getElementById('filterMaintenanceStatus');
+    var clientFilter = document.getElementById('filterMaintenanceClient');
     var rows   = document.querySelectorAll('#maintenanceTable tbody tr');
 
     function filterTable() {
         var q = search ? search.value.toLowerCase() : '';
         var s = status ? status.value.toLowerCase()  : '';
+        var c = clientFilter ? clientFilter.value : '';
 
         rows.forEach(function (row) {
             var text   = row.textContent.toLowerCase();
             var badge  = row.querySelector('.ts-badge');
             var sBadge = badge ? badge.textContent.trim().toLowerCase() : '';
+            var rowClient = row.getAttribute('data-client-id') || '';
 
             var matchQ = !q || text.includes(q);
             var matchS = !s || sBadge === s;
+            var matchC = !c || rowClient === c;
 
-            row.style.display = (matchQ && matchS) ? '' : 'none';
+            row.style.display = (matchQ && matchS && matchC) ? '' : 'none';
         });
     }
 
     if (search) search.addEventListener('input',  filterTable);
     if (status) status.addEventListener('change', filterTable);
+    if (clientFilter) clientFilter.addEventListener('change', filterTable);
 
     var deleteButtons = document.querySelectorAll('.maintenance-delete-btn');
     deleteButtons.forEach(function (button) {

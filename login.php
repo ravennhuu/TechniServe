@@ -59,7 +59,7 @@
         </div>
 
         <!-- Right Side: Login Form -->
-        <div class="col-lg-6 d-flex align-items-center justify-content-center p-4 p-md-5 bg-white">
+        <div class="col-lg-6 d-flex align-items-center justify-content-center p-4 p-md-5" style="background-color: var(--sage-white);">
             <div style="max-width: 400px; width: 100%;">
                 <h2 class="fs-4 fw-bold mb-2" style="color: var(--navy-deepest);">Welcome Back</h2>
                 <p class="mb-5" style="font-size: 0.875rem; color: var(--steel-blue);">Sign in to access the TechniServe portal</p>
