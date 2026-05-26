@@ -85,7 +85,7 @@ $p_map = ['Enterprise'=>'badge-navy','Professional'=>'badge-in-progress','Basic'
             </thead>
             <tbody>
                 <?php foreach ($clients as $c): ?>
-                <tr>
+                <tr data-status="<?php echo htmlspecialchars($c['status']); ?>">
                     <td class="col-id"><?php echo $c['id']; ?></td>
                     <td style="font-weight:600;"><?php echo htmlspecialchars($c['company_name']); ?></td>
                     <td class="text-muted-ts"><?php echo htmlspecialchars($c['contact_person']); ?></td>
@@ -111,9 +111,8 @@ function filterClients() {
     var s = document.getElementById('filterClientStatus').value.toLowerCase();
     document.querySelectorAll('#clientsTable tbody tr').forEach(function(row) {
         var text  = row.textContent.toLowerCase();
-        var badge = row.querySelector('.ts-badge:last-of-type');
-        var sBadge = badge ? badge.textContent.trim().toLowerCase() : '';
-        row.style.display = ((!q || text.includes(q)) && (!s || sBadge === s)) ? '' : 'none';
+        var status = row.getAttribute('data-status') || '';
+        row.style.display = ((!q || text.includes(q)) && (!s || status === s)) ? '' : 'none';
     });
 }
 </script>
