@@ -186,10 +186,9 @@ CREATE TABLE `leads` (
 
 ) ENGINE=InnoDB;
 
-CREATE OR REPLACE VIEW `v_sla_usage` AS
 SELECT
   t.client_id,
-  sc.id                                          AS contract_id,
+  sc.id                                           AS contract_id,
   sc.monthly_hours_pool,
   COALESCE(SUM(ml.hours_spent), 0)               AS hours_used,
   sc.monthly_hours_pool
@@ -197,7 +196,7 @@ SELECT
   sc.site_visits_included,
   COUNT(CASE WHEN ml.activity_type = 'site_visit'
              AND ml.status = 'completed'
-             THEN 1 END)                         AS site_visits_used
+             THEN 1 END)                          AS site_visits_used
 FROM `sla_contracts` sc
 JOIN `clients`       c  ON c.id         = sc.client_id
 JOIN `tickets`       t  ON t.client_id  = c.id
