@@ -24,21 +24,6 @@ CREATE TABLE `users` (
   UNIQUE KEY `uq_email` (`email`)
 ) ENGINE=InnoDB;
 
-
-CREATE TABLE `clients` (
-  `id`             INT          NOT NULL AUTO_INCREMENT,
-  `user_id`        INT          NOT NULL,
-
-  `company_name`   VARCHAR(150) NOT NULL,
-  `address`        TEXT         NULL,
-  `contact_person` VARCHAR(100) NOT NULL,
-  `contact_email`  VARCHAR(150) NOT NULL,
-  `contact_phone`  VARCHAR(20)  NULL,
-  `created_at`     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_client_user` (`user_id`),
-
 CREATE TABLE `clients` (
   `id`             INT          NOT NULL AUTO_INCREMENT,
   `user_id`        INT          NOT NULL,
@@ -102,26 +87,6 @@ CREATE TABLE `tickets` (
 
   `resolved_at` TIMESTAMP    NULL DEFAULT NULL,
 
-) ENGINE=InnoDB;
-
-CREATE TABLE `tickets` (
-  `id`          INT          NOT NULL AUTO_INCREMENT,
-  `client_id`   INT          NOT NULL,
-
-  `created_by`  INT          NOT NULL,
-
-  `subject`     VARCHAR(200) NOT NULL,
-  `description` TEXT         NOT NULL,
-
-  `priority`    ENUM('low','high','critical') NOT NULL DEFAULT 'low',
-
-  `status`      ENUM('open','in_progress','resolved','closed') NOT NULL DEFAULT 'open',
-
-  `created_at`  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at`  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-
-  `resolved_at` TIMESTAMP    NULL DEFAULT NULL,
-
   PRIMARY KEY (`id`),
 
   CONSTRAINT `fk_tickets_client`
@@ -145,31 +110,6 @@ CREATE TABLE `ticket_activities` (
     FOREIGN KEY (`ticket_id`) REFERENCES `tickets`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_activity_user`
     FOREIGN KEY (`user_id`)   REFERENCES `users`(`id`)   ON DELETE CASCADE
-
-) ENGINE=InnoDB;
-
-CREATE TABLE `maintenance_logs` (
-  `id`            INT          NOT NULL AUTO_INCREMENT,
-  `ticket_id`     INT          NOT NULL,
-
-  `performed_by`  INT          NOT NULL,
-
-  `title`         VARCHAR(150) NOT NULL,
-  `description`   TEXT         NULL,
-
-  `activity_type` ENUM('remote','on_site') NOT NULL,
-
-  `hours_deducted` DECIMAL(5,2) NOT NULL DEFAULT 0.00,
-
-  `service_date`  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `created_at`    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-  PRIMARY KEY (`id`),
-
-  CONSTRAINT `fk_maintenance_ticket`
-    FOREIGN KEY (`ticket_id`)    REFERENCES `tickets`(`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_maintenance_admin`
-    FOREIGN KEY (`performed_by`) REFERENCES `users`(`id`)   ON DELETE CASCADE
 
 ) ENGINE=InnoDB;
 
@@ -338,7 +278,7 @@ USE `techniServe`;
 -- NOTE: No client_id column here — link is established via clients.user_id.
 
 INSERT INTO `users` (`name`, `email`, `password_hash`, `role`) VALUES
-  ('Raven Alamo',   'admin@techniServe.ph', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin'),
+  ('System Admin',   'admin@techniServe.ph', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin'),
   ('Juan dela Cruz','client@acmecorp.ph',   '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'client'),
   ('Maria Santos',  'client@bpioffice.ph',  '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'client');
 

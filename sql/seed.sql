@@ -26,7 +26,7 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- Role Options: 'admin', 'client'
 -- ----------------------------------------------------------------
 INSERT INTO `users` (`id`, `name`, `email`, `password_hash`, `role`, `is_active`) VALUES
-(1, 'Raven Alamo', 'admin@techniServe.ph', '$2y$10$5BtGOAzw6Wbqw3W27wae9OD17IRUIM4wqd4IokMw8PLNM.qyklof.', 'admin', 1),
+(1, 'System Admin', 'admin@techniServe.ph', '$2y$10$5BtGOAzw6Wbqw3W27wae9OD17IRUIM4wqd4IokMw8PLNM.qyklof.', 'admin', 1),
 (2, 'System Admin', 'admin2@techniServe.ph', '$2y$10$5BtGOAzw6Wbqw3W27wae9OD17IRUIM4wqd4IokMw8PLNM.qyklof.', 'admin', 1),
 (3, 'Juan dela Cruz', 'client@acmecorp.ph', '$2y$10$5BtGOAzw6Wbqw3W27wae9OD17IRUIM4wqd4IokMw8PLNM.qyklof.', 'client', 1),
 (4, 'Maria Santos', 'client@bpioffice.ph', '$2y$10$5BtGOAzw6Wbqw3W27wae9OD17IRUIM4wqd4IokMw8PLNM.qyklof.', 'client', 1),
